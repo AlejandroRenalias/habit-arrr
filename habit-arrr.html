@@ -137,7 +137,7 @@
   /* Voyage scene (pixel-art) */
   #world { transform-origin: 0 0; transition: transform 1s steps(8); }
   .stage { position: relative; border: 4px solid #1b1b1b; box-shadow: 4px 4px 0 #000; overflow: hidden; background: #000; image-rendering: pixelated; }
-  .stage svg.scene { width: 100%; height: auto; aspect-ratio: 16 / 9; display: block; image-rendering: pixelated; }
+  .stage svg.scene { width: 100%; height: auto; aspect-ratio: 2 / 1; display: block; image-rendering: pixelated; }
   .stage canvas, .stage .tint, .stage .flash, .stage .hud { position: absolute; left: 0; top: 0; width: 100%; pointer-events: none; }
   .stage canvas { height: 100%; image-rendering: pixelated; object-fit: cover; }
   .stage .tint, .stage .flash { height: 100%; }
@@ -161,17 +161,17 @@
   .vbob { animation: vbob var(--dur, 2.6s) linear infinite; }
   @keyframes vbob { 0%,49.99% { transform: translateY(0); } 50%,100% { transform: translateY(calc(var(--lift, 4px) * -1)); } }
   .wave { animation: vscroll var(--wdur, 14s) steps(35) infinite; }
-  @keyframes vscroll { to { transform: translateY(-1600px); } }
+  @keyframes vscroll { to { transform: translateX(-960px); } }
   .cloud { animation: vdrift var(--cdur, 40s) steps(60) infinite; }
-  @keyframes vdrift { from { transform: translateY(700px); } to { transform: translateY(-260px); } }
+  @keyframes vdrift { from { transform: translateX(-220px); } to { transform: translateX(1160px); } }
   .clouds { transition: opacity 1.5s steps(5); }
   .rumble { animation: vrumble .2s steps(1) infinite; }
   .current, .wind { opacity: 0; transition: opacity 1s steps(4); }
   .current.on, .wind.on { opacity: 1; }
   .current .flow { animation: vflow 1.4s steps(7) infinite; }
-  @keyframes vflow { to { transform: translateY(-90px); } }
+  @keyframes vflow { to { transform: translateX(90px); } }
   .wind .gust { animation: vgust var(--gdur, 6s) steps(30) infinite; }
-  @keyframes vgust { from { transform: translateY(60px); } to { transform: translateY(-1020px); } }
+  @keyframes vgust { from { transform: translateX(-60px); } to { transform: translateX(1020px); } }
   .slowed { opacity: 0; }
   .slowed.show { animation: slowedup 2s steps(10) forwards; }
   @keyframes slowedup { 0% { opacity: 1; transform: translateY(0); } 70% { opacity: 1; } 100% { opacity: 0; transform: translateY(-24px); } }
@@ -212,7 +212,7 @@
   @media (min-width: 1000px) {
     main { max-width: 1160px; grid-template-columns: 1.25fr 1fr; align-items: start; }
     header.app-title, #hero, footer, .span-full { grid-column: 1 / -1; }
-    .stage svg.scene { aspect-ratio: 2 / 1; }
+    .stage svg.scene { aspect-ratio: 2.2 / 1; }
     /* The form sits in the narrower column, so it stacks in tidy rows instead of wrapping raggedly. */
     form.add input[type=text], form.add button { flex: 0 0 100%; }
     form.add select { flex: 1 1 calc(50% - 5px); min-width: 0; }
@@ -229,7 +229,7 @@
     .stats { gap: 6px; }
     .stat b { font-size: .75rem; }
     .stat span { font-size: .95rem; }
-    .stage svg.scene { aspect-ratio: 16 / 10; }
+    .stage svg.scene { aspect-ratio: 4 / 3; }
     .hud { gap: 4px; }
     .stage .popup { font-size: .6rem; }
     .hud span { font-size: .4rem; padding: 3px 5px; }
@@ -291,8 +291,8 @@
   <section class="panel loud span-full" aria-label="Voyage">
     <h2>The Voyage</h2>
     <div class="stage" id="stage">
-      <svg class="scene" id="scene" viewBox="0 0 700 394" preserveAspectRatio="xMidYMid slice" role="img" aria-label="Your ship sailing away from the Kraken, chasing behind you"></svg>
-      <canvas id="rain" width="700" height="394"></canvas>
+      <svg class="scene" id="scene" viewBox="0 0 960 300" preserveAspectRatio="xMidYMid slice" role="img" aria-label="Your ship sailing away from the Kraken"></svg>
+      <canvas id="rain" width="960" height="300"></canvas>
       <div class="tint" id="tint"></div>
       <div class="flash" id="flash"></div>
       <div class="hud"><span id="hud-weather"></span><span id="hud-gap"></span><span id="hud-chart"></span></div>
@@ -399,12 +399,9 @@
 
   // ---------- Voyage config ----------
   const N = 12; // waypoints per chart
-  const WORLD_W = 1400, WORLD_H = 2000; // the full corridor: wide enough that it always fills the window at every zoom, tall enough for the journey
-  const VIEW_W = 700, VIEW_H = 394;    // the on-screen window (what one screenful shows at zoom 1, ~16:9), separate from the world's full extent
-  const STEP = 130;                    // vertical distance between waypoints
-  const ROUTE_START_Y = 1500;          // near the bottom of the world: where the ship starts (leaves room below for the caged Kraken, and above for the last waypoint)
-  const CHANNEL_X = WORLD_W / 2;       // the canyon's center line; the route wanders around it, cliffs wall it in on both sides
-  const WP = Array.from({ length: N }, (_, i) => ({ x: CHANNEL_X + Math.sin(i * 0.9) * 60, y: ROUTE_START_Y - i * STEP })); // forward = smaller y = up-screen
+  const WORLD_W = 960, WORLD_H = 300; // the sea is wider than the visible map, so the route has room to spread out
+  const STEP = 60;                    // distance between waypoints; the route starts at x=200, leaving room for the cage behind it
+  const WP = Array.from({ length: N }, (_, i) => ({ x: 200 + i * STEP, y: 150 + Math.sin(i * 0.9) * 50 }));
   const ISLANDS = { 3: 'Parrot Cove', 6: 'Skull Isle', 9: 'Rum Reef', 11: 'Treasure Island' };
   const ISLAND_XP = { 3: 25, 6: 40, 9: 60, 11: 100 };
   const MAX_GAP = 5;            // lead (in days) shown as a full meter
@@ -759,32 +756,22 @@
   };
   // Everything lives in one "world" group; the camera is just that group's zoom + pan.
   const svg = mk('g', { id: 'world' }, $('scene'));
-  const ZOOM = 1.2;              // default zoom when the Kraken is close: a tight, behind-the-ship framing
-  const ZOOM_MIN = 0.6;          // pulled back this far when the Kraken has fallen well behind, so it's never off-frame
-  const SHIP_ANCHOR_Y = 0.66;    // the ship sits 66% down the window: headroom for the route ahead, room below for the Kraken (a landscape window is shorter, so this leaves less absolute space than it looks)
-  const CAMERA_MARGIN = 58;      // headroom (viewBox units) so the now much larger Kraken sprite clears the bottom edge whole
+  const ZOOM = 1.2;         // default zoom when the Kraken is close: a tight, behind-the-ship framing
+  const ZOOM_MIN = 0.75;    // pulled back this far when the Kraken has fallen well behind, so it's never off-frame
   let camPos = { x: 0, y: 0 }, camZoom = ZOOM;
   const edgeLabels = []; // map labels that get nudged inward so they never run off the visible edge
-  // The scene box's own aspect ratio (it varies per breakpoint) rarely matches VIEW_W:VIEW_H, so 'slice'
-  // crops one axis; this is the actual visible window size, used both to pan/zoom and to size the framing itself.
-  function viewport() {
-    const box = $('scene').getBoundingClientRect();
-    if (!box.width || !box.height) return null; // not laid out yet; the observer below calls us again
-    const s = Math.max(box.width / VIEW_W, box.height / VIEW_H);
-    return { vw: box.width / s, vh: box.height / s };
-  }
   function moveCamera(x, y, zoom = ZOOM) {
     camPos = { x, y };
     camZoom = zoom;
-    const vp = viewport();
-    if (!vp) return;
-    const { vw, vh } = vp;
-    const left = (VIEW_W - vw) / 2, top = (VIEW_H - vh) / 2;
-    // At a low zoom the (narrow) channel can end up smaller than the window on that axis; pan-clamping alone
-    // would then leave the world pinned to one edge with a black gap on the other, so center it instead.
-    const spanX = WORLD_W * zoom, spanY = WORLD_H * zoom;
-    const tx = spanX <= vw ? left + (vw - spanX) / 2 : Math.min(left, Math.max(left + vw - spanX, vw / 2 - zoom * x));
-    const ty = spanY <= vh ? top + (vh - spanY) / 2 : Math.min(top, Math.max(top + vh - spanY, vh * SHIP_ANCHOR_Y - zoom * y));
+    // On phones the scene box is taller than the world's ratio, so 'slice' crops the sides of the viewBox.
+    // Keep the camera inside the part that is actually visible.
+    const box = $('scene').getBoundingClientRect();
+    if (!box.width || !box.height) return; // not laid out yet; the observer below calls us again
+    const s = Math.max(box.width / WORLD_W, box.height / WORLD_H);
+    const vw = box.width / s, vh = box.height / s;
+    const left = (WORLD_W - vw) / 2, top = (WORLD_H - vh) / 2;
+    const tx = Math.min(left, Math.max(left + vw - WORLD_W * zoom, WORLD_W / 2 - zoom * x));
+    const ty = Math.min(top, Math.max(top + vh - WORLD_H * zoom, WORLD_H / 2 - zoom * y));
     svg.style.transform = `translate(${tx}px, ${ty}px) scale(${zoom})`;
 
     // Visible part of the world (in world units): keep each label fully inside it.
@@ -796,25 +783,18 @@
       l.el.style.visibility = l.x < minX - 30 || l.x > maxX + 30 ? 'hidden' : 'visible'; // island itself is off-screen
     });
   }
-  // Chase camera: anchors the ship low in the window (see SHIP_ANCHOR_Y) and zooms out as the Kraken falls
-  // further behind, so it always looms somewhere in the foreground below the ship instead of drifting off-frame.
+  // Chase camera: frames a point between the ship and the Kraken, weighted toward the Kraken so it always
+  // trails visibly "behind" the ship in frame, and zooms out as the gap widens so the Kraken is never lost off-edge.
   function chaseCamera() {
     const shipP = posAt(state.voyage.p), krakP = krakenPos();
-    const dy = krakP.y - shipP.y; // positive: the Kraken sits behind (larger y) the ship
-    const vh = (viewport() || { vh: VIEW_H }).vh;
-    const zoomForKraken = dy > CAMERA_MARGIN ? (vh * (1 - SHIP_ANCHOR_Y) - CAMERA_MARGIN) / dy : ZOOM;
-    const zoom = Math.max(ZOOM_MIN, Math.min(ZOOM, zoomForKraken));
-    moveCamera(shipP.x, shipP.y, zoom);
-  }
-  // The largest "behind the ship" distance (in world units) that still lands on-screen once zoom bottoms out
-  // at ZOOM_MIN — used to visually clamp the Kraken's sprite so it's never drawn past the frame's edge.
-  function maxKrakenVisualGap() {
-    const vh = (viewport() || { vh: VIEW_H }).vh;
-    return Math.max(120, (vh * (1 - SHIP_ANCHOR_Y) - CAMERA_MARGIN) / ZOOM_MIN);
+    const x = shipP.x * 0.45 + krakP.x * 0.55, y = shipP.y * 0.45 + krakP.y * 0.55;
+    const gapPx = Math.hypot(shipP.x - krakP.x, shipP.y - krakP.y);
+    const zoom = Math.max(ZOOM_MIN, Math.min(ZOOM, 300 / Math.max(gapPx, 60)));
+    moveCamera(x, y, zoom);
   }
   new ResizeObserver(() => moveCamera(camPos.x, camPos.y, camZoom)).observe($('scene'));
   const place = (g, x, y) => { g.style.transform = `translate(${x}px, ${y}px)`; };
-  const posAt = i => (i >= 0 ? WP[Math.min(i, N - 1)] : { x: WP[0].x, y: WP[0].y - i * STEP }); // negative = behind the start (closer to camera)
+  const posAt = i => (i >= 0 ? WP[Math.min(i, N - 1)] : { x: WP[0].x + i * STEP, y: WP[0].y }); // negative = behind the start
 
   // Sprites: one character per pixel, colors from PAL.
   const PAL = { W: '#f4f1e6', H: '#aab4bb', B: '#8a5a2b', D: '#4a2b10', R: '#d62828', K: '#161616', P: '#6a3fa0', L: '#a27be0', E: '#ff2a2a',
@@ -920,71 +900,6 @@
       'CCCCccCCCCCCCCCC',
       '.CCCCCCCCCCCCCC.',
     ],
-    // A rocky cliff spire — the common, small unit tiled between the larger landmasses.
-    cliff: [
-      '.....GG.....',
-      '....GGGG....',
-      '.....TT.....',
-      '....IIII....',
-      '...IiIIii...',
-      '...IIIIII...',
-      '..IIiIIiII..',
-      '..IIIIIIII..',
-      '.IIIiIIiIII.',
-      '.IIIIIIIIII.',
-      'IIIiIIIiIIII',
-      'IIIIIIIIIIII',
-      '.IIIIIIIIII.',
-      '..IIIIIIII..',
-    ],
-    // A large jungle-capped mountain — an actual landmass, not a scattered rock. Descends into a sandy skirt.
-    mountain: [
-      '.......GG.......',
-      '......GGGG......',
-      '.....GGGGGG.....',
-      '....GGGGGGGG....',
-      '...IGGGGGGGGI...',
-      '..IIGGGGGGGGII..',
-      '..IIIGGGGGGIII..',
-      '.IIIIiGGGGiIIII.',
-      '.IIIIIIIIIIIIII.',
-      'IIIiIIIIIIIIiIII',
-      'IIIIIIIIIIIIIIII',
-      'IIIiIIIIIIIIiIII',
-      'IIIIIIIIIIIIIIII',
-      '.IIIIiIIIIiIIII.',
-      '.IIIIIIIIIIIIII.',
-      '..IIIiIIIIiIII..',
-      '..IIIIIIIIIIII..',
-      '...IIIsssssII...',
-      '...IssssssssI...',
-      '....ssssssss....',
-      '.....ssssss.....',
-    ],
-    // A small sandy cove: a break in the cliff line with a beach and a lone palm.
-    beach: [
-      '....GG......',
-      '...GGGG.....',
-      '....TT......',
-      '....T.......',
-      '....T.......',
-      '.SSSSSSSS...',
-      'SSSSSSSSSS..',
-      'SsssssssSs..',
-      '.ssssssss...',
-      '..ssssss....',
-    ],
-    // A thin rock pillar jutting straight out of the water — a "dangerous rock" silhouette, distinct from the cliffs.
-    seastack: [
-      '...GG...',
-      '..IIII..',
-      '..IiII..',
-      '.IIIIII.',
-      '.IIiIII.',
-      'IIIIIIII',
-      'IIIiIIII',
-      '.IIIIII.',
-    ],
   };
   // Iron cage that fits around the Kraken sprite: thick top and bottom bars, vertical bars, and a gold padlock.
   SPR.cage = Array.from({ length: 14 }, (_, y) => Array.from({ length: 18 }, (_, x) => {
@@ -1045,9 +960,7 @@
     return t;
   };
 
-  const CLIFF_OFFSET_BASE = 170;   // distance from the channel's center line to the main cliff wall
-
-  // Sea: two-tone tiles, deep in the open channel.
+  // Sea: two-tone tiles.
   const defs = mk('defs', {}, svg);
   const seaTile = mk('pattern', { id: 'seatile', width: 24, height: 24, patternUnits: 'userSpaceOnUse' }, defs);
   mk('rect', { width: 24, height: 24, fill: '#1f6fa8' }, seaTile);
@@ -1056,162 +969,86 @@
   mk('rect', { x: 16, y: 6, width: 4, height: 4, fill: '#2f8bc6' }, seaTile);
   mk('rect', { width: WORLD_W, height: WORLD_H, fill: 'url(#seatile)', 'shape-rendering': 'crispEdges' }, svg);
 
-  // Distant peaks: large, low-opacity, desaturated silhouettes beyond the cliff line — a background layer that
-  // reads as "more mountains further out" without needing real parallax motion.
-  const distantG = mk('g', { opacity: 0.4, style: 'filter:saturate(.6) brightness(1.15)' }, svg);
-  for (let y = -260; y <= WORLD_H + 260; y += 340) {
-    [-1, 1].forEach(side => {
-      place(ent(distantG, SPR.mountain, 6).g, CHANNEL_X + side * (CLIFF_OFFSET_BASE + 210), y + Math.sin(y * 0.02) * 40);
-    });
-  }
-
-  // Shallow reef water: a lighter turquoise band where the channel meets each cliff line, deep blue between.
-  const REEF_W = 90;
-  [-1, 1].forEach(side => {
-    mk('rect', { x: CHANNEL_X + side * CLIFF_OFFSET_BASE - REEF_W / 2, y: 0, width: REEF_W, height: WORLD_H, fill: 'rgba(120,220,210,.22)' }, svg);
-  });
-
-  // Scrolling wave dashes; storm makes them taller and brighter. Rows now tile down the corridor (y) and
-  // scroll upward (toward camera), rather than tiling across a wide sea and scrolling sideways.
-  const waves = [0, 1, 2, 3].map(i => ({ g: mk('g', { class: 'wave', 'shape-rendering': 'crispEdges' }, svg), i }));
+  // Scrolling wave dashes; storm makes them taller and brighter.
+  const waves = [50, 130, 210, 270].map((y, i) => ({ g: mk('g', { class: 'wave', 'shape-rendering': 'crispEdges' }, svg), y, i }));
   function setWaves(amp) {
     const lift = Math.round(amp / 8) * 4;
-    waves.forEach(({ g, i }) => {
+    waves.forEach(({ g, y, i }) => {
       g.replaceChildren();
-      for (let y = (i * 70) % 150; y < WORLD_H * 2; y += 150 + (i % 2) * 40) {
-        for (let x = (i * 23) % 60; x < WORLD_W; x += 60 + (i % 2) * 20) {
-          mk('rect', { x, y: y - lift, width: 16, height: 4, fill: 'rgba(255,255,255,.55)' }, g);
-          mk('rect', { x: x + 4, y: y - lift - 4, width: 8, height: 4, fill: 'rgba(255,255,255,.55)' }, g);
-        }
+      for (let x = (i * 23) % 60; x < WORLD_W * 2; x += 60 + (i % 2) * 20) {
+        mk('rect', { x, y: y - lift, width: 16, height: 4, fill: 'rgba(255,255,255,.55)' }, g);
+        mk('rect', { x: x + 4, y: y - lift - 4, width: 8, height: 4, fill: 'rgba(255,255,255,.55)' }, g);
       }
     });
   }
-  // Favourable current: columns of pixel streaks that stream the way you are sailing (up-screen). Only shown while you are on a streak.
+  // Favourable current: rows of pixel arrows that drift the way you are sailing. Only shown while you are on a streak.
   const currentG = mk('g', { class: 'current', 'shape-rendering': 'crispEdges' }, svg);
   const flow = mk('g', { class: 'flow' }, currentG);
-  [-260, -130, 0, 130, 260].map(dx => CHANNEL_X + dx).forEach((x, col) => {
-    for (let y = -90 + (col * 37) % 90; y < WORLD_H + 90; y += 90) {
+  [38, 96, 154, 212, 268].forEach((y, row) => {
+    for (let x = -90 + (row * 37) % 90; x < WORLD_W + 90; x += 90) {
       const fill = 'rgba(215,245,255,.45)';
-      mk('rect', { x, y, width: 3, height: 26, fill }, flow);            // a long streak of moving water...
-      mk('rect', { x, y: y + 33, width: 3, height: 11, fill }, flow);    // ...trailing into a short one
+      mk('rect', { x, y, width: 26, height: 3, fill }, flow);            // a long streak of moving water...
+      mk('rect', { x: x + 33, y, width: 11, height: 3, fill }, flow);    // ...trailing into a short one
     }
   });
-  // The route: a dark outline stroke first for contrast against the varying water, then a thick gold dash on top —
-  // wide and confident enough to read at a glance, the way a hand-drawn treasure-map route would.
-  const routePts = WP.map(w => `${w.x},${w.y}`).join(' ');
-  mk('polyline', { points: routePts, fill: 'none', stroke: '#1a3a2e', 'stroke-width': 11, 'stroke-linecap': 'round', 'stroke-linejoin': 'round', 'shape-rendering': 'crispEdges' }, svg);
-  mk('polyline', { points: routePts, fill: 'none', stroke: '#f5e6a8', 'stroke-width': 7, 'stroke-dasharray': '14 12', 'stroke-linecap': 'round', 'shape-rendering': 'crispEdges' }, svg);
+  mk('polyline', { points: WP.map(w => `${w.x},${w.y}`).join(' '), fill: 'none', stroke: '#f5e6a8', 'stroke-width': 3, 'stroke-dasharray': '6 8', 'shape-rendering': 'crispEdges' }, svg);
 
-  // Islands sit on alternating banks of the corridor, at the forward distance of their waypoint.
-  const ISLAND_SIDE = { 3: 'left', 6: 'right', 9: 'left', 11: 'right' };
-  const BANK_OFFSET = 110;
   const chests = {};
   Object.keys(ISLANDS).forEach(k => {
     const w = WP[k];
-    const side = ISLAND_SIDE[k] === 'left' ? -1 : 1;
-    place(ent(svg, ISLAND_SPR[k], 4).g, w.x + side * BANK_OFFSET, w.y);
-    edgeLabels.push({ el: label(w.x + side * BANK_OFFSET, w.y + 26, ISLANDS[k].toUpperCase(), svg), x: w.x + side * BANK_OFFSET });
+    place(ent(svg, ISLAND_SPR[k], 4).g, w.x, w.y + 38); // well below the route, so the ship never lands on top of it
+    edgeLabels.push({ el: label(w.x, w.y + 80, ISLANDS[k].toUpperCase(), svg), x: w.x });
     chests[k] = null;
   });
 
-  // A dark, roiling halo under the Kraken so its whole stretch of water feels threatened, not just its sprite —
-  // and a few loose tentacle-tips beyond the halo's edge, as if more of it lurks just out of clear sight.
-  const krakenHalo = mk('g', {}, svg);
-  const krakenHaloBlur = mk('filter', { id: 'krakenhalo', x: '-60%', y: '-60%', width: '220%', height: '220%' }, defs);
-  mk('feGaussianBlur', { in: 'SourceGraphic', stdDeviation: 14 }, krakenHaloBlur);
-  const haloDark = mk('ellipse', { rx: 130, ry: 90, fill: 'rgba(10,15,35,.55)', filter: 'url(#krakenhalo)' }, krakenHalo);
-  const tentacleTips = [-95, 95, -60, 60].map((dx, i) => {
-    const g = mk('g', {}, krakenHalo);
-    sprite(g, SPR.kraken.slice(7, 12), 3, { transform: `translate(${dx - 12},${i % 2 ? 34 : 44}) rotate(${i % 2 ? -14 : 14})` });
-    return g;
-  });
-  const kraken = ent(svg, SPR.kraken, 7, true); // big and close: the Kraken is the threat the whole map is about
+  const kraken = ent(svg, SPR.kraken, 4, true);
   const cage = mk('g', { class: 'cage', style: 'display:none' }, kraken.inner); // drawn over the Kraken, moves with it
-  sprite(cage, SPR.cage, 7);
+  sprite(cage, SPR.cage, 4);
   // "SLOWED!" floats up from the Kraken when the current holds it back
-  const slowed = mk('text', { class: 'slowed', 'text-anchor': 'middle', y: -68, 'font-size': 9, fill: '#ffd23f', style: "font-family:'Press Start 2P',monospace;stroke:#000;stroke-width:3;paint-order:stroke" }, kraken.g);
+  const slowed = mk('text', { class: 'slowed', 'text-anchor': 'middle', y: -44, 'font-size': 9, fill: '#ffd23f', style: "font-family:'Press Start 2P',monospace;stroke:#000;stroke-width:3;paint-order:stroke" }, kraken.g);
   slowed.textContent = 'SLOWED!';
-  const ship = ent(svg, SPR.ship, 5, true); // the protagonist of the map: sized to be unmistakable at a glance
-  // A small wake trailing behind the ship (behind = larger y, since forward is up-screen).
-  const wake = mk('g', { 'shape-rendering': 'crispEdges', opacity: .8 }, ship.inner);
-  [[0, 24, 5], [-9, 34, 4], [9, 34, 4], [0, 44, 3]].forEach(([dx, dy, r]) => mk('rect', { x: dx - r / 2, y: dy, width: r, height: 3, fill: 'rgba(255,255,255,.65)' }, wake));
+  const ship = ent(svg, SPR.ship, 3, true); // drawn after the Kraken so it never hides the ship
 
-  // Fog of war: a blurred, translucent haze over unexplored water, with a soft-edged hole around the route you've sailed.
-  const fogBlur = mk('filter', { id: 'fogblur', x: '-30%', y: '-30%', width: '160%', height: '160%' }, defs);
-  mk('feGaussianBlur', { in: 'SourceGraphic', stdDeviation: 7 }, fogBlur);
-  const fogEdgeBlur = mk('filter', { id: 'fogedge', x: '-30%', y: '-30%', width: '160%', height: '160%' }, defs);
-  mk('feGaussianBlur', { in: 'SourceGraphic', stdDeviation: 10 }, fogEdgeBlur);
+  // Fog of war: blocky checker fog with hard-edged holes around the route you've sailed.
+  const fogTile = mk('pattern', { id: 'fogtile', width: 16, height: 16, patternUnits: 'userSpaceOnUse' }, defs);
+  mk('rect', { width: 16, height: 16, fill: '#aebcc6' }, fogTile);
+  mk('rect', { width: 8, height: 8, fill: '#bccad3' }, fogTile);
+  mk('rect', { x: 8, y: 8, width: 8, height: 8, fill: '#bccad3' }, fogTile);
   const fogMask = mk('mask', { id: 'fogmask' }, defs);
   mk('rect', { width: WORLD_W, height: WORLD_H, fill: 'white' }, fogMask);
-  const fogHoles = mk('g', { filter: 'url(#fogedge)' }, fogMask); // blurred mask edge: a soft fade instead of a hard circular cutoff
-  const fogCircles = WP.map(w => mk('circle', { cx: w.x, cy: w.y, r: 0, fill: 'black', style: 'transition:r 1.2s steps(8)' }, fogHoles));
-  const cageFog = mk('circle', { cx: posAt(START_K).x, cy: posAt(START_K).y, r: 0, fill: 'black', style: 'transition:r 1.2s steps(8)' }, fogHoles);
-  // A blurred duplicate of the sea, topped with a translucent haze tint: you can vaguely make out the water and
-  // route ahead through it, rather than the flat opaque checker this used to be.
-  const fog = mk('rect', { width: WORLD_W, height: WORLD_H, fill: 'url(#seatile)', filter: 'url(#fogblur)', mask: 'url(#fogmask)' }, svg);
-  const fogHaze = mk('rect', { width: WORLD_W, height: WORLD_H, fill: 'rgba(190,210,220,.24)', mask: 'url(#fogmask)' }, svg);
-
-  // Canyon walls: real landmasses, not a repeated rock — drawn on top of the fog since this is permanent
-  // scenery beside the channel, not a distance-traveled secret. Each bank gets its own irregular, asymmetric
-  // sequence of large mountains, small cliffs, sandy coves and rock pillars, so the two sides never mirror.
-  const CLIFF_STEP = 110;   // base vertical spacing between wall tiles
-  const WALL_PATTERN = { // deliberate sequences, not a random scatter: mostly one motif then reads as one landmass
-    left: [
-      { spr: 'mountain', px: 8, gap: 3 }, { spr: 'mountain', px: 8, gap: 1 }, { spr: 'cliff', px: 4 },
-      { spr: 'cliff', px: 4 }, { spr: 'beach', px: 5, gap: 1 }, { spr: 'seastack', px: 4, out: 60 },
-      { spr: 'cliff', px: 4 }, { spr: 'mountain', px: 7, gap: 2 }, { spr: 'cliff', px: 4 }, { spr: 'cliff', px: 4 },
-    ],
-    right: [
-      { spr: 'cliff', px: 4 }, { spr: 'seastack', px: 4, out: 45 }, { spr: 'mountain', px: 9, gap: 3 },
-      { spr: 'mountain', px: 9, gap: 2 }, { spr: 'cliff', px: 4 }, { spr: 'beach', px: 5, gap: 1 },
-      { spr: 'cliff', px: 4 }, { spr: 'cliff', px: 4 }, { spr: 'seastack', px: 4, out: 55 }, { spr: 'mountain', px: 7, gap: 2 },
-    ],
-  };
-  ['left', 'right'].forEach(sideName => {
-    const side = sideName === 'left' ? -1 : 1;
-    const seq = WALL_PATTERN[sideName];
-    let y = -320;
-    let i = 0;
-    while (y <= WORLD_H + 220) {
-      const tile = seq[i % seq.length];
-      const jitterX = Math.sin(y * 0.03 + side) * 14;
-      const outward = tile.out || 0; // rock pillars sit further out, into the open water, away from the wall line
-      place(ent(svg, SPR[tile.spr], tile.px).g, CHANNEL_X + side * (CLIFF_OFFSET_BASE + outward + jitterX), y);
-      y += CLIFF_STEP + (tile.gap || 0) * 40; // bigger landmasses claim more vertical room, so they read as one mass
-      i++;
-    }
-  });
-
-  const fogLabel = mk('text', { x: WORLD_W / 2, y: WP[N - 1].y - 60, 'text-anchor': 'middle', 'font-size': 7, fill: '#56656e', style: "font-family:'Press Start 2P',monospace" }, svg);
+  const fogCircles = WP.map(w => mk('circle', { cx: w.x, cy: w.y, r: 0, fill: 'black', 'shape-rendering': 'crispEdges', style: 'transition:r 1.2s steps(8)' }, fogMask));
+  const cageFog = mk('circle', { cx: posAt(START_K).x, cy: posAt(START_K).y, r: 0, fill: 'black', 'shape-rendering': 'crispEdges', style: 'transition:r 1.2s steps(8)' }, fogMask);
+  const fog = mk('rect', { width: WORLD_W, height: WORLD_H, fill: 'url(#fogtile)', mask: 'url(#fogmask)', 'shape-rendering': 'crispEdges' }, svg);
+  const fogLabel = mk('text', { x: 900, y: 36, 'text-anchor': 'middle', 'font-size': 7, fill: '#56656e', style: "font-family:'Press Start 2P',monospace" }, svg);
   fogLabel.textContent = 'UNCHARTED WATERS';
-  edgeLabels.push({ el: fogLabel, x: WORLD_W / 2 });
+  edgeLabels.push({ el: fogLabel, x: 900 });
 
-  // Storm clouds (above fog), seeded down the length of the corridor.
+  // Storm clouds (above fog).
   const clouds = mk('g', { class: 'clouds', opacity: 0 }, svg);
-  [[-320, 1500, 38], [-80, 1300, 52], [-220, 1100, 44], [140, 900, 60], [-260, 700, 48], [180, 500, 56], [-100, 200, 50]].forEach(([dx, y, dur]) => {
+  [[40, 24, 38], [250, 14, 52], [470, 30, 44], [700, 12, 60], [140, 268, 48], [600, 278, 56], [860, 20, 50]].forEach(([x, y, dur]) => {
     const wrap = mk('g', { class: 'cloud', style: `--cdur:${dur}s` }, clouds);
-    sprite(wrap, SPR.cloud, 10, { transform: `translate(${CHANNEL_X + dx},${y})` });
+    sprite(wrap, SPR.cloud, 10, { transform: `translate(${x},${y})` });
   });
 
-  // Wind wisps (above the fog, like the clouds): short gusts that stream up-screen while the current runs.
+  // Wind wisps (above the fog, like the clouds): short gusts that blow across the map while the current runs.
   const windG = mk('g', { class: 'wind', 'shape-rendering': 'crispEdges' }, svg);
-  [[-270, 350, 5.5], [-90, 300, 7], [50, 380, 6.2], [-220, 320, 8], [100, 340, 6.8], [-150, 360, 5.8], [30, 310, 6.4]].map(([dx, y, dur]) => [CHANNEL_X + dx, y, dur]).forEach(([x, y, dur]) => {
+  [[30, 42, 5.5], [210, 78, 7], [400, 30, 6.2], [600, 70, 8], [100, 240, 6.8], [500, 262, 5.8], [800, 96, 6.4]].forEach(([x, y, dur]) => {
     const gust = mk('g', { class: 'gust', style: `--gdur:${dur}s` }, windG);
-    [[0, 0, 10], [-2, 10, 8], [0, 18, 12]].forEach(([dx, dy, len]) => mk('rect', { x: x + dx, y: y + dy, width: 2, height: len, fill: 'rgba(255,255,255,.8)' }, gust));
+    [[0, 0, 10], [10, -2, 8], [18, 0, 12]].forEach(([dx, dy, w]) => mk('rect', { x: x + dx, y: y + dy, width: w, height: 2, fill: 'rgba(255,255,255,.8)' }, gust));
   });
 
-  // Rain: square pixel drops, in fixed screen space (matches the visible window, not the full corridor).
+  // Rain: square pixel drops.
   const rainCtx = $('rain').getContext('2d');
-  const drops = Array.from({ length: 650 }, () => ({ x: Math.random() * (VIEW_W + 60), y: Math.random() * VIEW_H, l: 6 + Math.round(Math.random() * 2) * 4, v: 9 + Math.random() * 8 }));
+  const drops = Array.from({ length: 650 }, () => ({ x: Math.random() * (WORLD_W + 60), y: Math.random() * 300, l: 6 + Math.round(Math.random() * 2) * 4, v: 9 + Math.random() * 8 }));
   let rainCount = 0, wind = 0;
   (function rainLoop() {
-    rainCtx.clearRect(0, 0, VIEW_W, VIEW_H);
+    rainCtx.clearRect(0, 0, WORLD_W, WORLD_H);
     if (rainCount > 0) {
       rainCtx.fillStyle = 'rgba(190,215,255,.75)';
       for (let i = 0; i < rainCount; i++) {
         const d = drops[i];
         d.y += d.v; d.x -= wind * 0.6;
-        if (d.y > VIEW_H || d.x < -20) { d.y = -20; d.x = Math.random() * (VIEW_W + 60); }
+        if (d.y > WORLD_H || d.x < -20) { d.y = -20; d.x = Math.random() * (WORLD_W + 60); }
         rainCtx.fillRect(Math.round(d.x / 2) * 2, Math.round(d.y / 2) * 2, 2, d.l);
       }
     }
@@ -1263,13 +1100,7 @@
     clearTimeout(cageTimer);
     cageBusy = false;
     cage.classList.remove('rattle', 'burst', 'drop');
-    // Rendering-only foreground clamp: never draw the Kraken further "behind" the ship than this, even at
-    // max zoom-out, so it always reads as looming close by. state.k and the real gap (HUD, fog) are untouched.
-    const put = k => {
-      const y = Math.min(k.y, posAt(state.voyage.p).y + maxKrakenVisualGap()) + 4;
-      place(kraken.g, k.x, y);
-      place(krakenHalo, k.x, y);
-    };
+    const put = k => place(kraken.g, k.x, k.y + 4);
     if (caged) {
       put(krakenPos());
       cage.style.display = '';
@@ -1351,7 +1182,7 @@
       // setting sail: keep the camera on the cage while it breaks open, then follow the chase
       clearTimeout(camTimer);
       camHold = true;
-      moveCamera(posAt(START_K).x, posAt(START_K).y);
+      moveCamera(posAt(0).x, posAt(0).y);
       camTimer = setTimeout(() => { camHold = false; chaseCamera(); }, 1700);
     } else if (!camHold) {
       chaseCamera();
@@ -1367,8 +1198,7 @@
     cageFog.setAttribute('r', WEATHER[lv].r);      // the sea behind the start, where the cage sits, is always visible
     Object.keys(chests).forEach(idx => {
       if (p >= +idx && !chests[idx]) {
-        const side = ISLAND_SIDE[idx] === 'left' ? -1 : 1;
-        const wrap = mk('g', { transform: `translate(${WP[idx].x + side * BANK_OFFSET - 12},${WP[idx].y + 20})` }); // claimed treasure, sitting on the island's beach
+        const wrap = mk('g', { transform: `translate(${WP[idx].x - 26},${WP[idx].y + 52})` }); // claimed treasure, sitting on the island's beach
         sprite(mk('g', { class: 'chest' }, wrap), SPR.chest, 3);
         svg.insertBefore(wrap, kraken.g); // chests sit under the Kraken, its cage and the ship
         chests[idx] = wrap;
