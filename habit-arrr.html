@@ -399,11 +399,12 @@
 
   // ---------- Voyage config ----------
   const N = 12; // waypoints per chart
-  const WORLD_W = 400, WORLD_H = 2000; // the full corridor: a tall strip the camera scrolls up through
+  const WORLD_W = 1400, WORLD_H = 2000; // the full corridor: wide enough that it always fills the window at every zoom, tall enough for the journey
   const VIEW_W = 700, VIEW_H = 394;    // the on-screen window (what one screenful shows at zoom 1, ~16:9), separate from the world's full extent
   const STEP = 130;                    // vertical distance between waypoints
   const ROUTE_START_Y = 1500;          // near the bottom of the world: where the ship starts (leaves room below for the caged Kraken, and above for the last waypoint)
-  const WP = Array.from({ length: N }, (_, i) => ({ x: WORLD_W / 2 + Math.sin(i * 0.9) * 60, y: ROUTE_START_Y - i * STEP })); // forward = smaller y = up-screen
+  const CHANNEL_X = WORLD_W / 2;       // the canyon's center line; the route wanders around it, cliffs wall it in on both sides
+  const WP = Array.from({ length: N }, (_, i) => ({ x: CHANNEL_X + Math.sin(i * 0.9) * 60, y: ROUTE_START_Y - i * STEP })); // forward = smaller y = up-screen
   const ISLANDS = { 3: 'Parrot Cove', 6: 'Skull Isle', 9: 'Rum Reef', 11: 'Treasure Island' };
   const ISLAND_XP = { 3: 25, 6: 40, 9: 60, 11: 100 };
   const MAX_GAP = 5;            // lead (in days) shown as a full meter
@@ -919,6 +920,23 @@
       'CCCCccCCCCCCCCCC',
       '.CCCCCCCCCCCCCC.',
     ],
+    // A rocky cliff spire, tiled continuously down both banks so the canyon walls the ship in the whole way.
+    cliff: [
+      '.....GG.....',
+      '....GGGG....',
+      '.....TT.....',
+      '....IIII....',
+      '...IiIIii...',
+      '...IIIIII...',
+      '..IIiIIiII..',
+      '..IIIIIIII..',
+      '.IIIiIIiIII.',
+      '.IIIIIIIIII.',
+      'IIIiIIIiIIII',
+      'IIIIIIIIIIII',
+      '.IIIIIIIIII.',
+      '..IIIIIIII..',
+    ],
   };
   // Iron cage that fits around the Kraken sprite: thick top and bottom bars, vertical bars, and a gold padlock.
   SPR.cage = Array.from({ length: 14 }, (_, y) => Array.from({ length: 18 }, (_, x) => {
@@ -1006,7 +1024,7 @@
   // Favourable current: columns of pixel streaks that stream the way you are sailing (up-screen). Only shown while you are on a streak.
   const currentG = mk('g', { class: 'current', 'shape-rendering': 'crispEdges' }, svg);
   const flow = mk('g', { class: 'flow' }, currentG);
-  [40, 120, 200, 280, 360].forEach((x, col) => {
+  [-260, -130, 0, 130, 260].map(dx => CHANNEL_X + dx).forEach((x, col) => {
     for (let y = -90 + (col * 37) % 90; y < WORLD_H + 90; y += 90) {
       const fill = 'rgba(215,245,255,.45)';
       mk('rect', { x, y, width: 3, height: 26, fill }, flow);            // a long streak of moving water...
@@ -1049,20 +1067,34 @@
   // route ahead through it, rather than the flat opaque checker this used to be.
   const fog = mk('rect', { width: WORLD_W, height: WORLD_H, fill: 'url(#seatile)', filter: 'url(#fogblur)', mask: 'url(#fogmask)' }, svg);
   const fogHaze = mk('rect', { width: WORLD_W, height: WORLD_H, fill: 'rgba(200,215,225,.45)', mask: 'url(#fogmask)' }, svg);
+
+  // Canyon walls: a cliff spire tiled continuously down both banks, drawn on top of the fog since these are
+  // permanent scenery beside the channel, not distance-traveled secrets — the ship always sails walled-in
+  // water instead of running off into open black space at the screen's edges.
+  const CLIFF_OFFSET = 170;   // distance from the channel's center line to each wall
+  const CLIFF_STEP = 110;     // vertical spacing between cliff tiles
+  for (let y = -300; y <= WORLD_H + 200; y += CLIFF_STEP) {
+    [-1, 1].forEach(side => {
+      const jitterX = Math.sin(y * 0.045 + (side > 0 ? 8 : 0)) * 24;
+      const jitterY = Math.cos(y * 0.07 + side) * 16;
+      place(ent(svg, SPR.cliff, 4).g, CHANNEL_X + side * (CLIFF_OFFSET + jitterX), y + jitterY);
+    });
+  }
+
   const fogLabel = mk('text', { x: WORLD_W / 2, y: WP[N - 1].y - 60, 'text-anchor': 'middle', 'font-size': 7, fill: '#56656e', style: "font-family:'Press Start 2P',monospace" }, svg);
   fogLabel.textContent = 'UNCHARTED WATERS';
   edgeLabels.push({ el: fogLabel, x: WORLD_W / 2 });
 
   // Storm clouds (above fog), seeded down the length of the corridor.
   const clouds = mk('g', { class: 'clouds', opacity: 0 }, svg);
-  [[40, 1500, 38], [250, 1300, 52], [120, 1100, 44], [300, 900, 60], [60, 700, 48], [280, 500, 56], [150, 200, 50]].forEach(([x, y, dur]) => {
+  [[-320, 1500, 38], [-80, 1300, 52], [-220, 1100, 44], [140, 900, 60], [-260, 700, 48], [180, 500, 56], [-100, 200, 50]].forEach(([dx, y, dur]) => {
     const wrap = mk('g', { class: 'cloud', style: `--cdur:${dur}s` }, clouds);
-    sprite(wrap, SPR.cloud, 10, { transform: `translate(${x},${y})` });
+    sprite(wrap, SPR.cloud, 10, { transform: `translate(${CHANNEL_X + dx},${y})` });
   });
 
   // Wind wisps (above the fog, like the clouds): short gusts that stream up-screen while the current runs.
   const windG = mk('g', { class: 'wind', 'shape-rendering': 'crispEdges' }, svg);
-  [[30, 350, 5.5], [210, 300, 7], [350, 380, 6.2], [80, 320, 8], [300, 340, 6.8], [150, 360, 5.8], [250, 310, 6.4]].forEach(([x, y, dur]) => {
+  [[-270, 350, 5.5], [-90, 300, 7], [50, 380, 6.2], [-220, 320, 8], [100, 340, 6.8], [-150, 360, 5.8], [30, 310, 6.4]].map(([dx, y, dur]) => [CHANNEL_X + dx, y, dur]).forEach(([x, y, dur]) => {
     const gust = mk('g', { class: 'gust', style: `--gdur:${dur}s` }, windG);
     [[0, 0, 10], [-2, 10, 8], [0, 18, 12]].forEach(([dx, dy, len]) => mk('rect', { x: x + dx, y: y + dy, width: 2, height: len, fill: 'rgba(255,255,255,.8)' }, gust));
   });
