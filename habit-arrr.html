@@ -419,6 +419,11 @@
   const CURRENT_STREAK = 3;     // days in a row before your ship catches a favourable current
   const CURRENT_MAX_LEAD = 8;   // the current stops helping once the Kraken is this many days behind (so a long streak can't make you untouchable)
   const CALM_STEPS = 2;         // days after setting sail that stay one weather step calmer
+  // Storm surge: a telegraphed hazard, not a random ambush — it can only start brewing once you're already
+  // in the tense zone (a short lead), and it only actually strikes if you stay idle on the warned day.
+  const STORM_TRIGGER_GAP = 2;  // storms only start brewing once your lead is this tense or worse
+  const STORM_CHANCE = 0.35;    // chance per eligible day that a warning appears
+  const STORM_SURGE = 2;        // extra waypoints the ship is pushed back if a warned storm actually strikes
   const reduceMotion = !!(window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches);
   // Weather by danger level (5 - days of lead over the Kraken)
   const WEATHER = [
@@ -436,6 +441,7 @@
   const yesterday = () => { const d = new Date(); d.setDate(d.getDate() - 1); return fmt(d); };
   const parseDay = s => { const [y, m, d] = s.split('-').map(Number); return new Date(y, m - 1, d, 12); }; // noon avoids DST edges
   const daysBetween = (a, b) => Math.round((parseDay(b) - parseDay(a)) / 86400000);
+  const addDays = (s, n) => { const d = parseDay(s); d.setDate(d.getDate() + n); return fmt(d); };
 
   // ---------- Game rules (pure functions) ----------
   const levelThreshold = level => Math.round(50 * Math.pow(level - 1, 1.5)); // XP needed to reach `level`
@@ -460,6 +466,10 @@
     tickedThrough: yesterday(),   // idle days up to here have already moved the Kraken
     sunkNotice: false,
     caged: true,                  // was the Kraken locked in its cage the last time we drew it?
+    stormDay: null,                // a date string: a storm is brewing and will strike on this day if you stay idle
+    stormWarnNotice: false,        // a storm warning just appeared (shown once, then cleared)
+    stormHitNotice: false,         // a storm just struck (shown once, then cleared)
+    stormAvertedNotice: false,     // you sailed through a warned storm by staying active (shown once, then cleared)
   });
   let state = load();
 
@@ -502,6 +512,7 @@
     state.k = START_K;
     state.drag = false;
     state.slowNotice = false;
+    state.stormDay = null; // a fresh chart shouldn't carry over a storm that was brewing on the last one
   }
   function sinkShip() {
     if (state.voyage.p > 0) state.sunkNotice = true;
@@ -511,6 +522,27 @@
 
   // On a streak (and with the Kraken not already far behind) your ship is riding a favourable current with the wind behind it.
   const onCurrentFor = (streak, lead) => streak >= CURRENT_STREAK && lead < CURRENT_MAX_LEAD;
+
+  // Storm surge: telegraphed, not random. It can only start brewing on a day your lead is already tense
+  // (STORM_TRIGGER_GAP), and a brewing storm only actually strikes if you're idle on the day it was warned
+  // for — staying active (completing a habit) that day sails you through it unscathed. Returns what happened
+  // on `day` — 'hit' | 'averted' | 'warned' | null — so the caller can decide how to notify the player.
+  function resolveStormForDay(day, gapBefore, wasActiveToday) {
+    if (state.stormDay === day) {
+      state.stormDay = null;
+      if (wasActiveToday) return 'averted';
+      if (state.voyage.p > 0) {
+        state.voyage.p = Math.max(0, state.voyage.p - STORM_SURGE);
+        return 'hit';
+      }
+      return null;
+    }
+    if (!state.stormDay && state.voyage.p > 0 && gapBefore <= STORM_TRIGGER_GAP && Math.random() < STORM_CHANCE) {
+      state.stormDay = addDays(day, 1);
+      return 'warned';
+    }
+    return null;
+  }
 
   // One day of chasing. It does nothing while the Kraken is caged (no progress yet).
   // On a current day it has to fight the same water: it stalls every other day, so your lead grows by one day per two days of streak.
@@ -533,6 +565,11 @@
     if (state.lastActive && state.lastActive > from) from = state.lastActive;
     const missed = Math.min(Math.max(0, daysBetween(from, y)), 365);
     for (let i = 0; i < missed; i++) {
+      const day = addDays(from, i + 1);
+      const gapBefore = state.voyage.p - state.k;
+      const ev = resolveStormForDay(day, gapBefore, false);
+      if (ev === 'hit') { state.stormHitNotice = true; if (state.voyage.p > 0 && state.k >= state.voyage.p) sinkShip(); }
+      else if (ev === 'warned') state.stormWarnNotice = true;
       moveKraken(false);
       if (state.voyage.p > 0 && state.k >= state.voyage.p) sinkShip(); // caught
     }
@@ -548,6 +585,9 @@
     const v = state.voyage;
     state.streak = state.lastActive === yesterday() ? state.streak + 1 : 1;
     state.lastActive = t;
+    const stormEv = resolveStormForDay(t, ctx.gapBefore, true);
+    if (stormEv === 'averted') state.stormAvertedNotice = true;
+    else if (stormEv === 'warned') state.stormWarnNotice = true;
     moveKraken(onCurrentFor(state.streak, v.p - state.k)); // before the ship steps: a no-op while the Kraken is still caged, so setting sail frees it without moving it
     if (v.p >= N - 1) {
       v.chart++; v.p = 0;
@@ -1209,6 +1249,24 @@
       toast('🌊 The current held the Kraken back: +1 day of lead!');
       if (!reduceMotion) { slowed.classList.remove('show'); void slowed.getBoundingClientRect(); slowed.classList.add('show'); }
     }
+    if (state.stormWarnNotice) {                   // a storm is now brewing for tomorrow (or later today, if seen live)
+      state.stormWarnNotice = false;
+      save();
+      toast('⚠️ Storm clouds are gathering... a tsunami may strike if you stay idle!');
+      showPopup('STORM WARNING!');
+    }
+    if (state.stormHitNotice) {                    // a warned storm struck because you went idle on it
+      state.stormHitNotice = false;
+      save();
+      toast(`🌪️ A tsunami slammed the ship, pushing it back ${STORM_SURGE} steps toward the Kraken!`);
+      showPopup('TSUNAMI STRIKES!');
+      if (!reduceMotion) { $('stage').classList.add('tremor-big'); setTimeout(() => $('stage').classList.remove('tremor-big'), 550); }
+    }
+    if (state.stormAvertedNotice) {                // a habit was completed on the very day a storm was due
+      state.stormAvertedNotice = false;
+      save();
+      toast('⛵ You sailed hard and weathered the storm — no ground lost!');
+    }
     fogCircles.forEach((c, i) => c.setAttribute('r', i <= p + 1 ? WEATHER[lv].r : 0));
     cageFog.setAttribute('r', WEATHER[lv].r);      // the sea behind the start, where the cage sits, is always visible
     Object.keys(chests).forEach(idx => {
@@ -1239,6 +1297,7 @@
         : 'Treasure Island reached! A new chart begins with your next active day.']);
       if (onCurrent) rows.push(['vs-good', 'A current is holding the Kraken back.']);
       else if (streakNow < CURRENT_STREAK) rows.push(['', `Streak ${streakNow}/${CURRENT_STREAK} to catch a current.`]);
+      if (state.stormDay === today() && idleToday) rows.push(['vs-warn', '⚠️ A tsunami threatens today — do a habit to weather it!']);
       if (idleToday) rows.push(gap <= 2
         ? ['vs-warn', 'Do a habit today or the Kraken closes in!']
         : ['', 'Do a habit today to sail on.']);
