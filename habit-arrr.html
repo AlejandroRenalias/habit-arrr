@@ -1,0 +1,1466 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Habit-Arrr!</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=VT323&display=swap">
+<style>
+  :root {
+    --wood: #2b1d12;
+    --wood-light: #33241a;
+    --parchment: #f0dfb0;
+    --parchment-dark: #d9c48c;
+    --ink: #2b1d12;
+    --gold: #f2b705;
+    --gold-dark: #9a7410;
+    --red: #b3262b;
+    --green: #3f9b3f;
+    --xp: #6a3fa0;
+    --px: 'Press Start 2P', monospace;
+    --body: 'VT323', monospace;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    padding: 16px;
+    background: repeating-conic-gradient(var(--wood) 0 25%, var(--wood-light) 0 50%) 0 0 / 16px 16px fixed;
+    color: var(--ink);
+    font-family: var(--body);
+    font-size: 22px;
+    line-height: 1.25;
+    min-height: 100vh;
+  }
+  h1, h2, h3, .title-font { font-family: var(--px); font-weight: normal; margin: 0; }
+  main { max-width: 760px; margin: 0 auto; display: grid; gap: 20px; }
+  header.app-title { text-align: center; color: var(--gold); }
+  header.app-title h1 { font-size: 1.5rem; line-height: 1.4; text-shadow: 4px 4px 0 #000; }
+  header.app-title p { margin: 10px 0 0; color: var(--parchment-dark); font-size: 1.2rem; }
+
+  .panel {
+    background: var(--parchment);
+    border: 4px solid #000;
+    padding: 16px;
+    box-shadow: 6px 6px 0 #000, inset 0 0 0 4px var(--parchment-dark);
+  }
+  .panel h2 { font-size: .8rem; line-height: 1.5; margin-bottom: 12px; padding-bottom: 8px; border-bottom: 4px solid var(--parchment-dark); text-transform: uppercase; }
+
+  /* Hierarchy: the voyage is the point of the app, so it shouts; the tools whisper. */
+  .panel.loud { box-shadow: 9px 9px 0 #000, inset 0 0 0 4px var(--gold-dark); }
+  .panel.loud h2 { font-size: 1rem; color: var(--gold-dark); border-bottom-color: var(--gold-dark); }
+  .panel.quiet { border-width: 3px; background: #e7d6a4; box-shadow: 3px 3px 0 #000; }
+  .panel.quiet h2 { font-size: .62rem; color: #5e4d2b; border-bottom-width: 3px; }
+
+  /* Hero */
+  .hero-top { display: flex; justify-content: space-between; align-items: baseline; flex-wrap: wrap; gap: 6px; }
+  .hero-level { font-size: 1.1rem; }
+  .hero-rank { color: var(--gold-dark); font-size: .75rem; text-transform: uppercase; }
+  .xp-bar { position: relative; height: 26px; background: #14142b; border: 4px solid #000; margin: 12px 0 6px; }
+  .xp-bar::after { content: ''; position: absolute; inset: 0; background: repeating-linear-gradient(90deg, transparent 0 calc(10% - 3px), #000 calc(10% - 3px) 10%); }
+  .xp-fill { height: 100%; width: 0; background: var(--xp); box-shadow: inset 0 4px 0 rgba(255,255,255,.3); transition: width .5s steps(10); }
+  .xp-text { font-size: 1.05rem; display: flex; justify-content: space-between; }
+  .stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-top: 12px; text-align: center; }
+  .stat { background: var(--parchment-dark); border: 3px solid #000; padding: 10px 4px; }
+  .stat b { display: block; font-family: var(--px); font-size: .95rem; font-weight: normal; margin-bottom: 6px; }
+  .stat span { font-size: 1rem; }
+
+  /* Add form */
+  form.add { display: flex; gap: 10px; flex-wrap: wrap; }
+  form.add input[type=text] { flex: 1 1 200px; }
+  input, select, button {
+    font: inherit;
+    padding: 8px 10px;
+    border-radius: 0;
+    border: 3px solid #000;
+    background: #fff8e4;
+    color: var(--ink);
+  }
+  input, select { font-family: var(--body); font-size: 1.15rem; }
+  button { cursor: pointer; background: var(--gold); font-family: var(--px); font-size: .6rem; line-height: 1.4; box-shadow: 3px 3px 0 #000; text-transform: uppercase; }
+  button { touch-action: manipulation; }
+  button:hover:not(:disabled) { filter: brightness(1.12); }
+  button:active:not(:disabled) { transform: translate(3px, 3px); box-shadow: none; }
+  button:disabled { cursor: default; background: var(--green); color: #fff; }
+  button.del { background: transparent; border: none; box-shadow: none; color: var(--red); font-size: .8rem; padding: 6px 8px; }
+
+  /* Quest ideas */
+  .ideas { margin-top: 16px; padding-top: 12px; border-top: 4px solid var(--parchment-dark); }
+  .ideas-head { display: flex; justify-content: space-between; align-items: center; gap: 8px; flex-wrap: wrap; margin-bottom: 10px; font-size: 1.15rem; line-height: 1.2; }
+  .ideas-head button { background: transparent; font-size: .45rem; padding: 6px 8px; box-shadow: none; }
+  .idea-list { display: flex; flex-wrap: wrap; gap: 10px; }
+  button.idea { display: inline-flex; align-items: center; gap: 8px; padding: 6px 10px; background: #fff8e4; font-family: var(--body); font-size: 1.15rem; text-transform: none; text-align: left; }
+  button.idea::before { content: '+'; font-family: var(--px); font-size: .6rem; }
+  .ideas-empty { font-size: 1.1rem; }
+  .tabs { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 12px; }
+  button.tab { font-size: .5rem; padding: 8px 10px; background: var(--parchment-dark); box-shadow: none; }
+  button.tab.active { background: #14142b; color: #ffe9a8; }
+
+  /* Quests */
+  .quest { display: flex; align-items: center; gap: 12px; padding: 10px; border: 3px solid #000; margin-bottom: 10px; background: #f8ecce; flex-wrap: wrap; }
+  .quest.done { opacity: .75; }
+  .quest .btn-short { display: none; }
+  .quest-info { flex: 1 1 180px; min-width: 0; }
+  .quest-name { font-size: 1.35rem; overflow-wrap: anywhere; }
+  .quest-meta { font-size: 1.05rem; display: flex; gap: 12px; flex-wrap: wrap; align-items: center; margin-top: 4px; }
+  .badge { padding: 3px 6px; border: 2px solid #000; color: #fff; font-family: var(--px); font-size: .45rem; line-height: 1.4; text-transform: uppercase; }
+  .badge.easy { background: var(--green); }
+  .badge.medium { background: #c77d0a; }
+  .badge.hard { background: var(--red); }
+  .badge.cat { background: #14142b; color: #ffe9a8; }
+  .empty { text-align: center; padding: 12px; }
+
+  /* Achievements */
+  .ach-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px; }
+  .ach { text-align: center; padding: 10px 6px; border: 3px solid #000; background: #fff3c4; }
+  .ach .icon { display: flex; justify-content: center; align-items: center; min-height: 44px; }
+  .ach .icon svg { image-rendering: pixelated; }
+  .ach .name { font-family: var(--px); font-size: .5rem; line-height: 1.5; margin: 4px 0; text-transform: uppercase; }
+  .ach .desc { font-size: 1rem; line-height: 1.1; }
+  .ach.locked { filter: grayscale(1); opacity: .5; border-style: dashed; }
+  .ach-group { grid-column: 1 / -1; margin-top: 8px; padding-bottom: 6px; border-bottom: 3px dashed var(--parchment-dark); font-family: var(--px); font-size: .55rem; text-transform: uppercase; }
+  .ach-group:first-child { margin-top: 0; }
+  .ach-toggle { display: none; }
+
+  /* Toast & level-up */
+  #toast-area { position: fixed; bottom: 16px; left: 50%; transform: translateX(-50%); display: grid; gap: 8px; z-index: 20; width: min(92vw, 400px); }
+  .toast { background: #14142b; color: #ffe9a8; border: 3px solid var(--gold); box-shadow: 3px 3px 0 #000; padding: 8px 14px; text-align: center; font-size: 1.3rem; line-height: 1.25; animation: pop .3s steps(3); }
+  @keyframes pop { from { transform: translateY(20px); opacity: 0; } to { transform: none; opacity: 1; } }
+  #levelup { position: fixed; inset: 0; background: rgba(0,0,0,.8); display: none; align-items: center; justify-content: center; z-index: 30; text-align: center; padding: 16px; overflow: hidden; }
+  #levelup.show { display: flex; }
+  #levelup .card { background: var(--parchment); border: 4px solid #000; box-shadow: 8px 8px 0 var(--gold); padding: 28px 30px; animation: pop .4s steps(4); position: relative; z-index: 2; }
+  #levelup h2 { font-size: 1.3rem; color: var(--red); border: none; padding: 0; }
+  #levelup p { margin: 12px 0 18px; font-size: 1.4rem; }
+  .confetti { position: absolute; top: -20px; width: 10px; height: 10px; animation: fall linear forwards; animation-timing-function: steps(28); z-index: 1; }
+  @keyframes fall { to { transform: translateY(110vh); } }
+
+  /* Voyage scene (pixel-art) */
+  #world { transform-origin: 0 0; transition: transform 1s steps(8); }
+  .stage { position: relative; border: 4px solid #1b1b1b; box-shadow: 4px 4px 0 #000; overflow: hidden; background: #000; image-rendering: pixelated; }
+  .stage svg.scene { width: 100%; height: auto; aspect-ratio: 2 / 1; display: block; image-rendering: pixelated; }
+  .stage canvas, .stage .tint, .stage .flash, .stage .hud { position: absolute; left: 0; top: 0; width: 100%; pointer-events: none; }
+  .stage canvas { height: 100%; image-rendering: pixelated; object-fit: cover; }
+  .stage .tint, .stage .flash { height: 100%; }
+  .tint { background: transparent; transition: background 2.4s steps(8); }
+  .flash { background: #fff; opacity: 0; }
+  .hud { top: 8px; left: 8px; width: auto !important; display: flex; gap: 6px; flex-wrap: wrap; }
+  .hud span { background: #14142b; color: #ffe9a8; border: 2px solid #000; padding: 4px 7px; font-family: 'Press Start 2P', monospace; font-size: .5rem; line-height: 1.4; }
+  /* Status rows: one message each, in the readable body font rather than one run-on line of caps. */
+  .voyage-status { margin: 12px 0 10px; min-height: 2.6em; display: grid; gap: 3px; }
+  .vs-row { display: flex; gap: 8px; align-items: baseline; font-size: 1.4rem; line-height: 1.2; }
+  .vs-row::before { content: '▸'; color: var(--gold-dark); font-size: .85em; }
+  .vs-good { color: #2d6e2d; }
+  .vs-good::before { content: '≈'; color: #2d6e2d; }
+  .vs-warn { color: var(--red); }
+  .vs-warn::before { content: '!'; color: var(--red); font-family: var(--px); font-size: .55em; }
+  .meter { position: relative; height: 16px; background: #14142b; border: 3px solid #000; }
+  .meter > div { height: 100%; transition: width .3s steps(5), background .3s; }
+  .meter::after { content: ''; position: absolute; inset: 0; background: repeating-linear-gradient(90deg, transparent 0 calc(20% - 3px), #000 calc(20% - 3px) 20%); }
+  .ent { transition: transform 1s steps(8); }
+  .mid { transition: transform .6s steps(4), filter .6s; }
+  .vbob { animation: vbob var(--dur, 2.6s) linear infinite; }
+  @keyframes vbob { 0%,49.99% { transform: translateY(0); } 50%,100% { transform: translateY(calc(var(--lift, 4px) * -1)); } }
+  .wave { animation: vscroll var(--wdur, 14s) steps(35) infinite; }
+  @keyframes vscroll { to { transform: translateX(-960px); } }
+  .cloud { animation: vdrift var(--cdur, 40s) steps(60) infinite; }
+  @keyframes vdrift { from { transform: translateX(-220px); } to { transform: translateX(1160px); } }
+  .clouds { transition: opacity 1.5s steps(5); }
+  .rumble { animation: vrumble .2s steps(1) infinite; }
+  .current, .wind { opacity: 0; transition: opacity 1s steps(4); }
+  .current.on, .wind.on { opacity: 1; }
+  .current .flow { animation: vflow 1.4s steps(7) infinite; }
+  @keyframes vflow { to { transform: translateX(90px); } }
+  .wind .gust { animation: vgust var(--gdur, 6s) steps(30) infinite; }
+  @keyframes vgust { from { transform: translateX(-60px); } to { transform: translateX(1020px); } }
+  .slowed { opacity: 0; }
+  .slowed.show { animation: slowedup 2s steps(10) forwards; }
+  @keyframes slowedup { 0% { opacity: 1; transform: translateY(0); } 70% { opacity: 1; } 100% { opacity: 0; transform: translateY(-24px); } }
+  .stage.tremor { animation: vtremorsoft .25s steps(1) 4; }
+  @keyframes vtremorsoft { 0% { transform: translate(0,0); } 25% { transform: translate(-1px,0); } 50% { transform: translate(1px,-1px); } 75% { transform: translate(0,1px); } 100% { transform: translate(0,0); } }
+  .stage.tremor-big { animation: vtremor .5s steps(1) 1; }
+  .stage .popup { position: absolute; left: 50%; top: 40%; transform: translate(-50%, -50%); opacity: 0; pointer-events: none; white-space: nowrap; font-family: var(--px); font-size: .85rem; color: #ffd23f; text-shadow: 3px 3px 0 #000, -2px 0 0 #000, 2px 0 0 #000, 0 -2px 0 #000, 0 2px 0 #000; }
+  .stage .popup.show { animation: popupshow 2s steps(10) forwards; }
+  @keyframes popupshow { 0% { opacity: 0; transform: translate(-50%,-30%) scale(.5); } 10% { opacity: 1; transform: translate(-50%,-50%) scale(1.2); } 20% { transform: translate(-50%,-50%) scale(1); } 80% { opacity: 1; } 100% { opacity: 0; transform: translate(-50%,-70%) scale(1); } }
+  @keyframes vtremor { 0% { transform: translate(0,0); } 20% { transform: translate(-2px,1px); } 40% { transform: translate(2px,-1px); } 60% { transform: translate(-1px,-2px); } 80% { transform: translate(1px,2px); } 100% { transform: translate(0,0); } }
+  @keyframes vrumble { 0% { transform: translate(0,0); } 25% { transform: translate(-3px,0); } 50% { transform: translate(0,3px); } 75% { transform: translate(3px,0); } }
+  .chest { animation: chestpop .4s steps(4); }
+  @keyframes chestpop { 0% { transform: translateY(-14px); opacity: 0; } 100% { transform: translateY(0); opacity: 1; } }
+  .slam { animation: vslam .5s steps(1) 3; }
+  @keyframes vslam { 0% { transform: translate(0,0); } 20% { transform: translate(-12px,6px); } 40% { transform: translate(12px,-6px); } 60% { transform: translate(-9px,-3px); } 80% { transform: translate(9px,6px); } }
+  .cage.drop { animation: cagedrop .5s steps(5); }
+  @keyframes cagedrop { from { transform: translateY(-60px); opacity: 0; } to { transform: none; opacity: 1; } }
+  .cage.rattle { animation: cagerattle .5s steps(1) 2; }
+  @keyframes cagerattle { 0% { transform: translate(0,0); } 25% { transform: translate(-3px,0); } 50% { transform: translate(3px,-2px); } 75% { transform: translate(-2px,2px); } 100% { transform: translate(0,0); } }
+  .cage.burst { animation: cageburst .7s steps(6) forwards; }
+  @keyframes cageburst { from { transform: scale(1); opacity: 1; } to { transform: scale(2.2); opacity: 0; } }
+  #sunk { position: absolute; inset: 0; display: none; align-items: center; justify-content: center; background: rgba(30,0,0,.85); padding: 12px; text-align: center; }
+  #sunk.show { display: flex; }
+  #sunk .card { background: #14142b; color: #ffe9a8; border: 4px solid #000; box-shadow: 4px 4px 0 #8b2f2f; padding: 16px 18px; max-width: 440px; }
+  #sunk h3 { font-family: var(--px); font-size: .85rem; color: #ff5a5a; line-height: 1.5; }
+  #sunk p { margin: 10px 0 14px; font-size: 1.2rem; line-height: 1.25; }
+  #sunk button { font-family: 'Press Start 2P', monospace; font-size: .6rem; border-radius: 0; border: 3px solid #000; background: #f2b705; box-shadow: 3px 3px 0 #000; }
+  @media (prefers-reduced-motion: reduce) {
+    .vbob, .wave, .cloud, .rumble, .slam, .chest, .cage, .stage.tremor, .stage.tremor-big, .current .flow, .wind .gust { animation: none; }
+    .stage .popup.show { animation: none; opacity: 1; }
+  }
+
+  footer { text-align: center; color: var(--parchment-dark); font-size: 1.1rem; }
+  .footer-actions { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; margin-top: 10px; }
+  footer button { font-size: .5rem; padding: 6px 8px; background: transparent; color: var(--parchment-dark); border-color: var(--parchment-dark); box-shadow: none; }
+  /* Wide screens: the voyage and the trophies run the full width, and only the board and the form share a row.
+     This block sits after the base rules on purpose, so its form overrides win on equal specificity. */
+  @media (min-width: 1000px) {
+    main { max-width: 1160px; grid-template-columns: 1.25fr 1fr; align-items: start; }
+    header.app-title, #hero, footer, .span-full { grid-column: 1 / -1; }
+    .stage svg.scene { aspect-ratio: 2.2 / 1; }
+    /* The form sits in the narrower column, so it stacks in tidy rows instead of wrapping raggedly. */
+    form.add input[type=text], form.add button { flex: 0 0 100%; }
+    form.add select { flex: 1 1 calc(50% - 5px); min-width: 0; }
+    #idea-tabs button.tab { flex: 1 1 auto; }
+  }
+
+  @media (max-width: 560px) {
+    body { padding: 10px; font-size: 20px; }
+    main { gap: 16px; }
+    header.app-title h1 { font-size: 1rem; }
+    header.app-title p { font-size: 1.05rem; }
+    .panel { padding: 12px; box-shadow: 4px 4px 0 #000, inset 0 0 0 3px var(--parchment-dark); }
+    .hero-level { font-size: .9rem; }
+    .stats { gap: 6px; }
+    .stat b { font-size: .75rem; }
+    .stat span { font-size: .95rem; }
+    .stage svg.scene { aspect-ratio: 4 / 3; }
+    .hud { gap: 4px; }
+    .stage .popup { font-size: .6rem; }
+    .hud span { font-size: .4rem; padding: 3px 5px; }
+    .vs-row { font-size: 1.25rem; }
+    .panel.loud { box-shadow: 5px 5px 0 #000, inset 0 0 0 3px var(--gold-dark); }
+    .panel.loud h2 { font-size: .8rem; }
+    .panel.quiet h2 { font-size: .55rem; }
+    .toast { font-size: 1.05rem; padding: 7px 10px; }
+    .ideas-head { font-size: 1.05rem; }
+    form.add input[type=text] { flex: 1 1 100%; }
+    form.add select { flex: 1 1 40%; min-width: 0; }
+    form.add button { flex: 1 1 100%; padding: 12px; }
+    .tabs { gap: 4px; margin-bottom: 8px; }
+    button.tab { flex: 1 1 auto; padding: 9px 6px; font-size: .45rem; }
+    button.tab .tab-count { display: none; }
+    .ideas { margin-top: 12px; padding-top: 10px; }
+    .ideas-head { margin-bottom: 8px; flex-wrap: nowrap; }
+    .ideas-hint { display: none; }
+    .ideas-head button { padding: 10px 10px; white-space: nowrap; }
+    footer button { padding: 10px 12px; }
+    .toast { padding: 8px 10px; font-size: .5rem; }
+    .idea-list { gap: 6px; }
+    button.idea { padding: 6px 8px; gap: 6px; font-size: 1.05rem; line-height: 1.1; }
+    button.idea::before { font-size: .5rem; }
+    button.idea .badge { font-size: .4rem; padding: 2px 4px; }
+    .quest { flex-wrap: nowrap; gap: 8px; padding: 8px; margin-bottom: 8px; }
+    .quest-info { flex: 1 1 auto; }
+    .quest-name { font-size: 1.15rem; line-height: 1.1; }
+    .quest-meta { gap: 6px; margin-top: 4px; font-size: .95rem; }
+    .quest .meta-total, .quest .streak-word, .quest .btn-long, .quest .diff-word { display: none; }
+    .quest .btn-short { display: inline; }
+    .quest > button.complete { flex: 0 0 auto; padding: 8px 10px; min-width: 48px; }
+    button.del { padding: 8px 6px; }
+    .ach-grid { grid-template-columns: 1fr; gap: 6px; }
+    .ach-grid.collapsed .ach.locked, .ach-grid.collapsed .ach-group:not(.has-unlocked) { display: none; }
+    .ach-group { margin-top: 4px; font-size: .5rem; }
+    .ach-toggle { display: block; width: 100%; margin-top: 8px; padding: 12px 8px; background: var(--parchment-dark); }
+    .ach-toggle[hidden] { display: none; }
+    .ach { display: grid; grid-template-columns: 34px 1fr; column-gap: 10px; align-items: center; text-align: left; padding: 6px 8px; }
+    .ach .icon { grid-row: 1 / span 2; min-height: 0; }
+    .ach .icon svg { width: 30px; height: 30px; }
+    .ach .name { margin: 0; font-size: .45rem; }
+    .ach .desc { font-size: .95rem; line-height: 1.05; }
+    #levelup .card { padding: 20px 16px; }
+    #levelup h2 { font-size: 1rem; }
+    #toast-area { bottom: 8px; }
+  }
+</style>
+</head>
+<body>
+<main>
+  <header class="app-title">
+    <h1>⚔ Habit-Arrr! ⚔</h1>
+    <p>Slay your daily habits. Rise through the ranks.</p>
+  </header>
+
+  <section class="panel" id="hero" aria-label="Hero status"></section>
+
+  <section class="panel loud span-full" aria-label="Voyage">
+    <h2>The Voyage</h2>
+    <div class="stage" id="stage">
+      <svg class="scene" id="scene" viewBox="0 0 960 300" preserveAspectRatio="xMidYMid slice" role="img" aria-label="Your ship sailing away from the Kraken"></svg>
+      <canvas id="rain" width="960" height="300"></canvas>
+      <div class="tint" id="tint"></div>
+      <div class="flash" id="flash"></div>
+      <div class="hud"><span id="hud-weather"></span><span id="hud-gap"></span><span id="hud-chart"></span></div>
+      <div class="popup" id="stage-popup" aria-live="assertive"></div>
+      <div id="sunk">
+        <div class="card">
+          <h3>⚓ Your ship was sunk!</h3>
+          <p>The Kraken caught you after too many idle days. You lost your progress on this chart, but your XP and level are safe.</p>
+          <button id="sunk-close" type="button">Set sail again</button>
+        </div>
+      </div>
+    </div>
+    <div class="voyage-status" id="voyage-status" aria-live="polite"></div>
+    <div class="meter" title="Days of lead over the Kraken"><div id="gap-bar"></div></div>
+  </section>
+
+  <section class="panel">
+    <h2>Habit Board</h2>
+    <div class="tabs" id="board-tabs" role="tablist" aria-label="Habit board categories"></div>
+    <div id="quests"></div>
+  </section>
+
+  <section class="panel quiet">
+    <h2>Post a New Habit</h2>
+    <form class="add" id="add-form">
+      <input type="text" id="quest-name" placeholder="e.g. Study 30 minutes" maxlength="60" required>
+      <select id="quest-diff" aria-label="Difficulty">
+        <option value="easy">Easy (10 XP)</option>
+        <option value="medium" selected>Medium (20 XP)</option>
+        <option value="hard">Hard (40 XP)</option>
+      </select>
+      <select id="quest-cat" aria-label="Category">
+        <option value="body">Body</option>
+        <option value="mind">Mind</option>
+        <option value="home">Home</option>
+        <option value="work">Work</option>
+        <option value="other" selected>Other</option>
+      </select>
+      <button type="submit">Add Habit</button>
+    </form>
+    <div class="ideas">
+      <div class="ideas-head">
+        <span>Need ideas?<span class="ideas-hint"> Tap one to add it</span></span>
+        <button type="button" id="ideas-more">More ideas</button>
+      </div>
+      <div class="tabs" id="idea-tabs" role="tablist" aria-label="Habit categories"></div>
+      <div class="idea-list" id="ideas"></div>
+    </div>
+  </section>
+
+  <section class="panel quiet span-full">
+    <h2>Trophy Hall</h2>
+    <div class="ach-grid" id="achievements"></div>
+    <button type="button" class="ach-toggle" id="ach-toggle"></button>
+  </section>
+
+  <footer>
+    Progress is saved in this browser. Export a backup to keep it safe or move it to another device.
+    <div class="footer-actions">
+      <button id="export" type="button">Export progress</button>
+      <button id="import" type="button">Import progress</button>
+      <button id="reset" type="button">Reset all progress</button>
+    </div>
+    <input type="file" id="import-file" accept=".json,application/json" hidden>
+  </footer>
+</main>
+
+<div id="toast-area" aria-live="polite"></div>
+<div id="levelup" role="dialog" aria-modal="true">
+  <div class="card">
+    <h2>Level Up!</h2>
+    <p id="levelup-text"></p>
+    <button id="levelup-close" type="button">Onward!</button>
+  </div>
+</div>
+
+<script>
+(() => {
+  'use strict';
+
+  // ---------- Config ----------
+  const STORAGE_KEY = 'habit-quest-v1';
+  const XP_BY_DIFF = { easy: 10, medium: 20, hard: 40 };
+  const TITLES = ['Peasant', 'Apprentice', 'Adventurer', 'Knight', 'Champion', 'Archmage', 'Legend'];
+  const ACHIEVEMENTS = [
+    // Habits, easiest first
+    { id: 'first',    icon: '🗡️', name: 'First Step',    desc: 'Complete your first habit' },
+    { id: 'hard',     icon: '🐉', name: 'Dragon Slayer', desc: 'Complete a hard habit' },
+    { id: 'over',     icon: '🏆', name: 'Overachiever',  desc: 'Complete 5 habits in one day' },
+    { id: 'allcat',   icon: '🧭', name: 'Well Rounded',  desc: 'Complete a habit in all four categories' },
+    { id: 'fifty',    icon: '💰', name: 'Fifty Deep',    desc: 'Complete 50 habits in total' },
+    { id: 'century',  icon: '💎', name: 'Centurion',     desc: 'Complete 100 habits in total' },
+    // Voyage
+    { id: 'isle',     icon: '🏝️', name: 'Island Hopper', desc: 'Reach your first island' },
+    { id: 'current',  icon: '🌊', name: 'Wind in Sails', desc: 'Catch a favourable current' },
+    { id: 'close',    icon: '🐙', name: 'Close Call',    desc: 'Get back to it with the Kraken 1 day behind' },
+    { id: 'chart',    icon: '🗺️', name: 'Chart Master',  desc: 'Finish a whole chart' },
+    // Milestones
+    { id: 'week',     icon: '🔥', name: 'Week Warrior',  desc: 'Reach a 7-day streak' },
+    { id: 'fortnight',icon: '⏳', name: 'Old Salt',      desc: 'Reach a 14-day streak' },
+    { id: 'lvl5',     icon: '👑', name: 'Rising Star',   desc: 'Reach level 5' },
+    { id: 'lvl10',    icon: '⭐', name: 'Legend of the Seas', desc: 'Reach level 10' },
+  ];
+
+  // ---------- Voyage config ----------
+  const N = 12; // waypoints per chart
+  const WORLD_W = 960, WORLD_H = 300; // the sea is wider than the visible map, so the route has room to spread out
+  const STEP = 60;                    // distance between waypoints; the route starts at x=200, leaving room for the cage behind it
+  const WP = Array.from({ length: N }, (_, i) => ({ x: 200 + i * STEP, y: 150 + Math.sin(i * 0.9) * 50 }));
+  const ISLANDS = { 3: 'Parrot Cove', 6: 'Skull Isle', 9: 'Rum Reef', 11: 'Treasure Island' };
+  const ISLAND_XP = { 3: 25, 6: 40, 9: 60, 11: 100 };
+  const MAX_GAP = 5;            // lead (in days) shown as a full meter
+  // Kraken tuning
+  const START_K = -2;           // the caged Kraken sits two steps behind the start, so your lead is 3 once you set sail
+  const CURRENT_STREAK = 3;     // days in a row before your ship catches a favourable current
+  const CURRENT_MAX_LEAD = 8;   // the current stops helping once the Kraken is this many days behind (so a long streak can't make you untouchable)
+  const CALM_STEPS = 2;         // days after setting sail that stay one weather step calmer
+  const reduceMotion = !!(window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches);
+  // Weather by danger level (5 - days of lead over the Kraken)
+  const WEATHER = [
+    { name: '☀️ Calm seas', rain: 0,   wind: 0,  r: 105, amp: 4,  wdur: 16, cloud: 0,   tilt: 3,  lift: 4,  dur: 2.6, tint: 'rgba(0,0,0,0)' },
+    { name: '☁️ Overcast',  rain: 0,   wind: 1,  r: 95,  amp: 8,  wdur: 11, cloud: 0.4, tilt: 5,  lift: 5,  dur: 2.0, tint: 'rgba(30,40,60,.16)' },
+    { name: '🌧️ Rain',      rain: 140, wind: 3,  r: 85,  amp: 14, wdur: 8,  cloud: 0.7, tilt: 8,  lift: 7,  dur: 1.6, tint: 'rgba(15,25,45,.26)' },
+    { name: '⛈️ Storm',     rain: 340, wind: 6,  r: 72,  amp: 22, wdur: 5,  cloud: 0.9, tilt: 13, lift: 10, dur: 1.1, tint: 'rgba(8,12,28,.48)' },
+    { name: '🌀 Hurricane', rain: 650, wind: 10, r: 60,  amp: 30, wdur: 3,  cloud: 1,   tilt: 20, lift: 14, dur: .7,  tint: 'rgba(50,0,10,.6)' },
+  ];
+
+  // ---------- Date helpers (local time, never UTC) ----------
+  const pad = n => String(n).padStart(2, '0');
+  const fmt = d => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+  const today = () => fmt(new Date());
+  const yesterday = () => { const d = new Date(); d.setDate(d.getDate() - 1); return fmt(d); };
+  const parseDay = s => { const [y, m, d] = s.split('-').map(Number); return new Date(y, m - 1, d, 12); }; // noon avoids DST edges
+  const daysBetween = (a, b) => Math.round((parseDay(b) - parseDay(a)) / 86400000);
+
+  // ---------- Game rules (pure functions) ----------
+  const levelThreshold = level => Math.round(50 * Math.pow(level - 1, 1.5)); // XP needed to reach `level`
+  function levelFromXp(xp) {
+    let level = 1;
+    while (levelThreshold(level + 1) <= xp) level++;
+    return level;
+  }
+  const titleForLevel = level => TITLES[Math.min(Math.floor((level - 1) / 2), TITLES.length - 1)];
+  const streakMultiplier = streak => (streak >= 7 ? 1.5 : streak >= 3 ? 1.2 : 1);
+
+  // ---------- State ----------
+  const freshState = () => ({
+    habits: [], totalXp: 0, achievements: [], bestStreak: 0,
+    voyage: { chart: 1, p: 0 },   // p = waypoint index on the current chart
+    k: START_K,                   // the Kraken's waypoint index (negative = behind the start). Your lead in days = p - k
+    drag: false,                  // the current is holding the Kraken back today (it stalls every other current day)
+    slowNotice: false,            // the current just held the Kraken back (shown once, then cleared)
+    current: false,               // was your ship on a favourable current the last time we drew it?
+    streak: 0,                   // days in a row with at least one habit done
+    lastActive: null,             // last day with any habit completed
+    tickedThrough: yesterday(),   // idle days up to here have already moved the Kraken
+    sunkNotice: false,
+    caged: true,                  // was the Kraken locked in its cage the last time we drew it?
+  });
+  let state = load();
+
+  // Bring older saves and backups (which stored a "gap" in days instead of the Kraken's position) up to date.
+  function migrate(s, saved) {
+    if (typeof saved.k !== 'number') s.k = s.voyage.p - (Number.isFinite(saved.gap) ? saved.gap : 3);
+    ['reefs', 'detourAt', 'detourLeft', 'reefNotice'].forEach(key => delete s[key]); // from the earlier reef version
+    if (typeof saved.k !== 'number') s.caged = s.voyage.p === 0; // the old "caged" flag meant something else
+    if (s.voyage.p === 0) s.k = START_K;                       // fresh start: caged
+    else s.k = Math.min(s.k, s.voyage.p - 1);                  // never on top of the ship
+    delete s.gap;
+    return s;
+  }
+
+  function load() {
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if (raw) {
+        const saved = JSON.parse(raw);
+        const s = migrate(Object.assign(freshState(), saved), saved);
+        if (Array.isArray(s.habits)) return s;
+      }
+    } catch (e) { /* storage unavailable or corrupt: start fresh */ }
+    return freshState();
+  }
+  function save() {
+    try { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); } catch (e) { /* ignore */ }
+  }
+
+  // Streaks lapse if the last check-in was before yesterday.
+  function expireStreaks() {
+    const t = today(), y = yesterday();
+    state.habits.forEach(h => {
+      if (h.lastDone !== t && h.lastDone !== y) h.streak = 0;
+    });
+  }
+
+  // Back to the start: progress on this chart is lost (XP is kept) and the Kraken is locked in its cage again.
+  function resetKraken() {
+    state.k = START_K;
+    state.drag = false;
+    state.slowNotice = false;
+  }
+  function sinkShip() {
+    if (state.voyage.p > 0) state.sunkNotice = true;
+    state.voyage.p = 0;
+    resetKraken();
+  }
+
+  // On a streak (and with the Kraken not already far behind) your ship is riding a favourable current with the wind behind it.
+  const onCurrentFor = (streak, lead) => streak >= CURRENT_STREAK && lead < CURRENT_MAX_LEAD;
+
+  // One day of chasing. It does nothing while the Kraken is caged (no progress yet).
+  // On a current day it has to fight the same water: it stalls every other day, so your lead grows by one day per two days of streak.
+  function moveKraken(onCurrent = false) {
+    if (state.voyage.p === 0) return;
+    if (onCurrent) {
+      state.drag = !state.drag;
+      if (state.drag) { state.slowNotice = true; return; } // held back today
+    } else {
+      state.drag = false;
+    }
+    state.k += 1;
+  }
+
+  // Days you did nothing let the Kraken close in at full speed: the current only helps on days you sail. (On days you do something it keeps pace: see advanceVoyage.)
+  function processDays() {
+    expireStreaks();
+    const y = yesterday();
+    let from = state.tickedThrough;
+    if (state.lastActive && state.lastActive > from) from = state.lastActive;
+    const missed = Math.min(Math.max(0, daysBetween(from, y)), 365);
+    for (let i = 0; i < missed; i++) {
+      moveKraken(false);
+      if (state.voyage.p > 0 && state.k >= state.voyage.p) sinkShip(); // caught
+    }
+    if (y > state.tickedThrough) state.tickedThrough = y;
+  }
+
+  // Your first habit of the day moves the ship one step; the Kraken keeps pace, unless you are on a streak and the current holds it back.
+  // Returns bonus XP.
+  function advanceVoyage() {
+    const t = today();
+    const ctx = { firstToday: state.lastActive !== t, gapBefore: state.voyage.p - state.k, bonus: 0 };
+    if (!ctx.firstToday) return ctx;
+    const v = state.voyage;
+    state.streak = state.lastActive === yesterday() ? state.streak + 1 : 1;
+    state.lastActive = t;
+    moveKraken(onCurrentFor(state.streak, v.p - state.k)); // before the ship steps: a no-op while the Kraken is still caged, so setting sail frees it without moving it
+    if (v.p >= N - 1) {
+      v.chart++; v.p = 0;
+      resetKraken();
+      toast(`🗺️ Chart ${v.chart} begins. New waters await!`);
+    } else {
+      v.p++;
+      const bonus = ISLAND_XP[v.p];
+      if (bonus) {
+        ctx.bonus = bonus;
+        toast(`🏝️ Reached ${ISLANDS[v.p]}! +${bonus} XP`);
+      }
+    }
+    return ctx;
+  }
+
+  // ---------- Actions ----------
+  function addHabit(name, difficulty, cat = 'other') {
+    state.habits.push({ id: Date.now().toString(36) + Math.random().toString(36).slice(2, 6),
+      name, difficulty, cat, streak: 0, lastDone: null, totalDone: 0 });
+    save(); render();
+  }
+
+  function deleteHabit(id) {
+    state.habits = state.habits.filter(h => h.id !== id);
+    save(); render();
+  }
+
+  function completeHabit(id) {
+    const h = state.habits.find(x => x.id === id);
+    const t = today();
+    if (!h || h.lastDone === t) return; // one check-in per day
+
+    const levelBefore = levelFromXp(state.totalXp);
+    h.streak = h.lastDone === yesterday() ? h.streak + 1 : 1;
+    h.lastDone = t;
+    h.totalDone++;
+    state.bestStreak = Math.max(state.bestStreak, h.streak);
+
+    const mult = streakMultiplier(h.streak);
+    const gained = Math.round(XP_BY_DIFF[h.difficulty] * mult);
+    state.totalXp += gained;
+    toast(`+${gained} XP${mult > 1 ? ` (streak x${mult})` : ''}`);
+
+    const ctx = advanceVoyage();
+    state.totalXp += ctx.bonus;
+
+    const levelAfter = levelFromXp(state.totalXp);
+    checkAchievements(h, ctx);
+
+    save(); render();
+    if (levelAfter > levelBefore) showLevelUp(levelAfter);
+  }
+
+  function checkAchievements(justDone, ctx) {
+    const doneToday = state.habits.filter(h => h.lastDone === today()).length;
+    const totalDone = state.habits.reduce((n, h) => n + (h.totalDone || 0), 0);
+    const catsDone = new Set(state.habits.filter(h => h.totalDone > 0).map(h => (CAT_LABEL[h.cat] ? h.cat : 'other')));
+    const level = levelFromXp(state.totalXp);
+    const conditions = {
+      first: true,
+      hard: justDone.difficulty === 'hard',
+      over: doneToday >= 5,
+      allcat: ['body', 'mind', 'home', 'work'].every(c => catsDone.has(c)),
+      fifty: totalDone >= 50,
+      century: totalDone >= 100,
+      isle: state.voyage.chart > 1 || state.voyage.p >= 3,
+      current: state.voyage.p > 0 && onCurrentFor(state.streak, state.voyage.p - state.k),
+      close: ctx.firstToday && ctx.gapBefore <= 1,
+      chart: state.voyage.chart > 1,
+      week: state.bestStreak >= 7,
+      fortnight: state.bestStreak >= 14,
+      lvl5: level >= 5,
+      lvl10: level >= 10,
+    };
+    ACHIEVEMENTS.forEach(a => {
+      if (conditions[a.id] && !state.achievements.includes(a.id)) {
+        state.achievements.push(a.id);
+        toast(`${a.icon} Trophy unlocked: ${a.name}`);
+      }
+    });
+  }
+
+  // ---------- Rendering ----------
+  const $ = id => document.getElementById(id);
+  function el(tag, cls, text) {
+    const e = document.createElement(tag);
+    if (cls) e.className = cls;
+    if (text !== undefined) e.textContent = text;
+    return e;
+  }
+
+  function renderHero() {
+    const xp = state.totalXp;
+    const level = levelFromXp(xp);
+    const floor = levelThreshold(level), ceil = levelThreshold(level + 1);
+    const pct = Math.min(100, ((xp - floor) / (ceil - floor)) * 100);
+    const hero = $('hero');
+    hero.replaceChildren();
+
+    const top = el('div', 'hero-top');
+    top.append(el('span', 'hero-level title-font', `Level ${level}`), el('span', 'hero-rank title-font', titleForLevel(level)));
+
+    const bar = el('div', 'xp-bar');
+    const fill = el('div', 'xp-fill');
+    fill.style.width = pct + '%';
+    bar.append(fill);
+
+    const txt = el('div', 'xp-text');
+    txt.append(el('span', '', `${xp - floor} / ${ceil - floor} XP`), el('span', '', `${ceil - xp} to level ${level + 1}`));
+
+    const done = state.habits.filter(h => h.lastDone === today()).length;
+    const stats = el('div', 'stats');
+    [[xp, 'Total XP'], [state.bestStreak, 'Best streak'], [`${done}/${state.habits.length}`, 'Done today']].forEach(([v, l]) => {
+      const s = el('div', 'stat');
+      s.append(el('b', '', String(v)), el('span', '', l));
+      stats.append(s);
+    });
+    hero.append(top, bar, txt, stats);
+  }
+
+  function renderQuests() {
+    const tabs = $('board-tabs'), box = $('quests');
+    tabs.replaceChildren();
+    box.replaceChildren();
+    if (!state.habits.length) {
+      box.append(el('div', 'empty', 'The board is empty. Post your first habit above!'));
+      return;
+    }
+    const catOf = h => (CAT_LABEL[h.cat] ? h.cat : 'other'); // quests saved before categories existed
+    const count = id => (id === 'all' ? state.habits.length : state.habits.filter(h => catOf(h) === id).length);
+    if (boardCat !== 'all' && !count(boardCat)) boardCat = 'all'; // the category was emptied
+    ['all', ...Object.keys(CAT_LABEL)].forEach(id => {
+      if (id === 'other' && !count('other')) return;
+      const b = el('button', 'tab' + (id === boardCat ? ' active' : ''), id === 'all' ? 'All' : CAT_LABEL[id]);
+      b.append(el('span', 'tab-count', ` (${count(id)})`));
+      b.type = 'button';
+      b.setAttribute('role', 'tab');
+      b.setAttribute('aria-selected', String(id === boardCat));
+      b.addEventListener('click', () => { boardCat = id; renderQuests(); });
+      tabs.append(b);
+    });
+    const t = today();
+    state.habits.filter(h => boardCat === 'all' || catOf(h) === boardCat).forEach(h => {
+      const isDone = h.lastDone === t;
+      const card = el('div', 'quest' + (isDone ? ' done' : ''));
+
+      const info = el('div', 'quest-info');
+      info.append(el('div', 'quest-name', h.name));
+      const meta = el('div', 'quest-meta');
+      const diffBadge = el('span', 'badge ' + h.difficulty);
+      diffBadge.append(el('span', 'diff-word', `${h.difficulty} · `), `${XP_BY_DIFF[h.difficulty]} XP`);
+      meta.append(diffBadge,
+        el('span', 'badge cat', CAT_LABEL[catOf(h)]),
+        el('span', 'meta-streak', `🔥 ${h.streak}`),
+        el('span', 'meta-total', `Completed ${h.totalDone}×`));
+      meta.querySelector('.meta-streak').append(el('span', 'streak-word', '-day streak'));
+      info.append(meta);
+
+      const btn = el('button', 'complete');
+      btn.append(el('span', 'btn-long', isDone ? '✔ Done today' : 'Complete Habit'), el('span', 'btn-short', isDone ? '✔' : 'Do it'));
+      btn.disabled = isDone;
+      btn.addEventListener('click', () => completeHabit(h.id));
+
+      const del = el('button', 'del', '✖');
+      del.title = 'Abandon habit';
+      del.setAttribute('aria-label', `Delete habit ${h.name}`);
+      del.addEventListener('click', () => { if (confirm(`Abandon "${h.name}"?`)) deleteHabit(h.id); });
+
+      card.append(info, btn, del);
+      box.append(card);
+    });
+  }
+
+  const TROPHY_GROUP = {
+    first: 'Habits', hard: 'Habits', over: 'Habits', allcat: 'Habits', fifty: 'Habits', century: 'Habits',
+    isle: 'Voyage', current: 'Voyage', close: 'Voyage', chart: 'Voyage',
+    week: 'Milestones', fortnight: 'Milestones', lvl5: 'Milestones', lvl10: 'Milestones',
+  };
+  let showLockedTrophies = false; // phones only: locked trophies are tucked away until asked for
+  function renderAchievements() {
+    const grid = $('achievements');
+    grid.replaceChildren();
+    let lastGroup = null, heading = null;
+    ACHIEVEMENTS.forEach(a => {
+      const unlocked = state.achievements.includes(a.id);
+      const group = TROPHY_GROUP[a.id];
+      if (group !== lastGroup) {
+        heading = el('div', 'ach-group', group);
+        grid.append(heading);
+        lastGroup = group;
+      }
+      if (unlocked) heading.classList.add('has-unlocked'); // lets phones hide headings of fully locked groups
+      const c = el('div', 'ach' + (unlocked ? '' : ' locked'));
+      const icon = el('div', 'icon');
+      icon.append(spriteSvg(TROPHY_SPR[a.id] || TROPHY_SPR.first, 5));
+      c.append(icon, el('div', 'name', a.name), el('div', 'desc', a.desc));
+      grid.append(c);
+    });
+    const locked = ACHIEVEMENTS.length - ACHIEVEMENTS.filter(a => state.achievements.includes(a.id)).length;
+    grid.classList.toggle('collapsed', !showLockedTrophies);
+    const toggle = $('ach-toggle');
+    toggle.hidden = locked === 0;
+    toggle.textContent = showLockedTrophies ? 'Hide locked trophies ▴' : `${locked} more to unlock ▾`;
+    toggle.setAttribute('aria-expanded', String(showLockedTrophies));
+  }
+
+  // ---------- Voyage scene (pixel-art) ----------
+  const NS = 'http://www.w3.org/2000/svg';
+  const mk = (tag, attrs, parent) => {
+    const e = document.createElementNS(NS, tag);
+    Object.entries(attrs || {}).forEach(([k, v]) => e.setAttribute(k, v));
+    if (parent) parent.append(e);
+    return e;
+  };
+  // Everything lives in one "world" group; the camera is just that group's zoom + pan.
+  const svg = mk('g', { id: 'world' }, $('scene'));
+  const ZOOM = 1.2;
+  let camPos = { x: 0, y: 0 };
+  const edgeLabels = []; // map labels that get nudged inward so they never run off the visible edge
+  function moveCamera(x, y) {
+    camPos = { x, y };
+    // On phones the scene box is taller than the world's ratio, so 'slice' crops the sides of the viewBox.
+    // Keep the camera inside the part that is actually visible.
+    const box = $('scene').getBoundingClientRect();
+    if (!box.width || !box.height) return; // not laid out yet; the observer below calls us again
+    const s = Math.max(box.width / WORLD_W, box.height / WORLD_H);
+    const vw = box.width / s, vh = box.height / s;
+    const left = (WORLD_W - vw) / 2, top = (WORLD_H - vh) / 2;
+    const tx = Math.min(left, Math.max(left + vw - WORLD_W * ZOOM, WORLD_W / 2 - ZOOM * x));
+    const ty = Math.min(top, Math.max(top + vh - WORLD_H * ZOOM, WORLD_H / 2 - ZOOM * y));
+    svg.style.transform = `translate(${tx}px, ${ty}px) scale(${ZOOM})`;
+
+    // Visible part of the world (in world units): keep each label fully inside it.
+    const minX = (left - tx) / ZOOM, maxX = (left + vw - tx) / ZOOM;
+    edgeLabels.forEach(l => {
+      const measured = l.el.getBBox ? l.el.getBBox().width : 0;
+      const half = Math.max(measured, l.el.textContent.length * 7) / 2 + 8;
+      l.el.setAttribute('x', Math.min(maxX - half, Math.max(minX + half, l.x)));
+      l.el.style.visibility = l.x < minX - 30 || l.x > maxX + 30 ? 'hidden' : 'visible'; // island itself is off-screen
+    });
+  }
+  new ResizeObserver(() => moveCamera(camPos.x, camPos.y)).observe($('scene'));
+  const place = (g, x, y) => { g.style.transform = `translate(${x}px, ${y}px)`; };
+  const posAt = i => (i >= 0 ? WP[Math.min(i, N - 1)] : { x: WP[0].x + i * STEP, y: WP[0].y }); // negative = behind the start
+
+  // Sprites: one character per pixel, colors from PAL.
+  const PAL = { W: '#f4f1e6', H: '#aab4bb', B: '#8a5a2b', D: '#4a2b10', R: '#d62828', K: '#161616', P: '#6a3fa0', L: '#a27be0', E: '#ff2a2a',
+    G: '#3f9b3f', T: '#6b4423', S: '#e8c872', s: '#c08f45', Y: '#f2b705', C: '#2a3140', c: '#3b4459', I: '#2f343f', i: '#8b93a3',
+    u: '#2479b3', v: '#8fd8ff' };
+  const SPR = {
+    ship: [
+      '.......RRR......',
+      '.......B........',
+      '......WBWW......',
+      '.....WWBWWW.....',
+      '....WWWBWWWW....',
+      '....WHHBHHWW....',
+      '...WWWWBWWWWW...',
+      '...WHHHBHHHHW...',
+      '......B.........',
+      '..DDDDDDDDDDDD..',
+      '...DBBBBBBBBD...',
+      '....DBBBBBBD....',
+      '.....DDDDDD.....',
+    ],
+    kraken: [
+      '.....PPPPPP.....',
+      '....PPPPPPPP....',
+      '...PPLLPPLLPP...',
+      '...PPEEPPEEPP...',
+      '...PPEEPPEEPP...',
+      '...PPPPPPPPPP...',
+      '....PPPPPPPP....',
+      '..P.PPPPPPPP.P..',
+      '.PP.P.PPPP.P.PP.',
+      '.P..P..PP..P..P.',
+      'P..PP..PP..PP..P',
+      '...P...PP...P...',
+    ],
+    // Each island has its own landmark, so you can tell them apart at a glance from across the map.
+    parrotCove: [
+      '...GGG......GG......',
+      '..GGGGG...GGGGG.....',
+      '...GTG.....GTG......',
+      '....T.......T.......',
+      '....T...RR..T.......',
+      '....T..RYYR.T.......',
+      '...TT...RR..TT......',
+      '.SSSSSSSSSSSSSSSS...',
+      'SSSSSSSSSSSSSSSSSS..',
+      '.ssssssssssssssss...',
+      '..ssssssssssssss....',
+    ],
+    skullIsle: [
+      '....WWWWWWWW........',
+      '...WWWWWWWWWW.......',
+      '..WWKKWWWWKKWW......',
+      '..WWKKWWWWKKWW......',
+      '..WWWWWWWWWWWW......',
+      '...WWWWKKWWWW.......',
+      '....WWWWWWWW........',
+      '.....WKWKWKW........',
+      '.SSSSSSSSSSSSSSSS...',
+      'SSSSSSSSSSSSSSSSSS..',
+      '.ssssssssssssssss...',
+    ],
+    rumReef: [
+      '....................',
+      '.....DDDD..DDDD.....',
+      '....BBBBBB.BBBBBB...',
+      '....YYYYYY.YYYYYY...',
+      '....BBBBBB.BBBBBB...',
+      '....YYYYYY.YYYYYY...',
+      '..HHBBBBBB.BBBBBBHH.',
+      '.SSSSSSSSSSSSSSSSSS.',
+      'SSSSSSSSSSSSSSSSSSSS',
+      '.ssssssssssssssssss.',
+      '..ssssssssssssssss..',
+    ],
+    treasureIsle: [
+      '.............KKKK...',
+      '.............KWKK...',
+      '.............KKKK...',
+      '.............T......',
+      '..YYYYYY.....T......',
+      '.YBBBBBBY....T......',
+      '.YBYYYYBY....T......',
+      '.YBBBBBBY....T......',
+      '.SSSSSSSSSSSSSSSS...',
+      'SSSSSSSSSSSSSSSSSS..',
+      '.ssssssssssssssss...',
+    ],
+    chest: [
+      '..YYYYYY..',
+      '.YBBBBBBY.',
+      'YBBBYYBBBY',
+      'YYYYYYYYYY',
+      'YBBBYYBBBY',
+      'YBBBBBBBBY',
+      'YBBBBBBBBY',
+      'YYYYYYYYYY',
+    ],
+    cloud: [
+      '.....CCCC.......',
+      '...CCCCCCCC.CC..',
+      '.CCCCCCCCCCCCCC.',
+      'CCCCccCCCCCCCCCC',
+      '.CCCCCCCCCCCCCC.',
+    ],
+  };
+  // Iron cage that fits around the Kraken sprite: thick top and bottom bars, vertical bars, and a gold padlock.
+  SPR.cage = Array.from({ length: 14 }, (_, y) => Array.from({ length: 18 }, (_, x) => {
+    if (y < 2 || y > 11) return (y >= 11 && y <= 13 && x >= 7 && x <= 10) ? 'Y' : 'I'; // bars, with the lock over the bottom edge
+    if (x % 4 === 0 || x === 17) return 'I';
+    return x % 4 === 1 ? 'i' : '.';
+  }).join(''));
+
+  const ISLAND_SPR = { 3: SPR.parrotCove, 6: SPR.skullIsle, 9: SPR.rumReef, 11: SPR.treasureIsle };
+
+  // Pixel icons for the Trophy Hall, so it matches the map instead of mixing in emoji.
+  const TROPHY_SPR = {
+    first: ['...HH...', '...HH...', '...HH...', '...HH...', '.YYYYYY.', '...BB...', '...BB...', '..YYYY..'],           // dagger
+    hard:  ['....GG..', '...GGGG.', '...GEGG.', '...GGGGG', '..GGWWW.', '.GGG....', 'GGG.....', 'GG......'],           // sea serpent
+    over:  ['YYYYYYYY', 'Y.YYYY.Y', 'Y.YYYY.Y', '.YYYYYY.', '..YYYY..', '...YY...', '..YYYY..', 'YYYYYYYY'],           // trophy cup
+    isle:  ['..GGG...', '.GGGGG..', '..GTG...', '...T....', '...T....', '.SSSSSS.', 'SSSSSSSS', '..SSSS..'],           // palm island
+    close: ['..PPPP..', '.PPPPPP.', '.PEPPEP.', '.PPPPPP.', '.PPPPPP.', 'PP.PP.PP', 'P.P..P.P', '..P..P..'],           // kraken
+    week:  ['...RR...', '..RRR...', '..RYRR..', '.RRYYR..', '.RYYYRR.', 'RRYWYYR.', 'RRYYYRR.', '.RRRRR..'],           // flame
+    lvl5:  ['Y..YY..Y', 'Y.YYYY.Y', 'YYYYYYYY', 'YRYYYYRY', 'YYYYYYYY', '.YYYYYY.'],                                   // crown
+    allcat:   ['GGGGPPPP', 'GGGGPPPP', 'GGGGPPPP', 'GGGGPPPP', 'BBBBYYYY', 'BBBBYYYY', '.BBBYYY.', '..BBYY..'],        // quartered shield
+    fifty:    ['.YYYYYY.', 'YYYYYYYY', '.DDDDDD.', '.YYYYYY.', 'YYYYYYYY', '.DDDDDD.'],                                // coin stack
+    century:  ['..vvvv..', '.vuuuuv.', 'vuuvvuuv', 'vuuuuuuv', '.vuuuuv.', '..vuuv..', '...vv...'],                    // gemstone
+    current:  ['.vv..vv.', 'vuuvvuuv', 'uuuuuuuu', '........', '.vv..vv.', 'vuuvvuuv', 'uuuuuuuu'],                    // waves
+    chart:    ['.SSSSSS.', 'SSSSSSSS', 'SRSSSSRS', 'SSRSSRSS', 'SSSRRSSS', 'SSRSSRSS', 'SRSSSSRS', '.SSSSSS.'],        // map with an X
+    fortnight:['BBBBBBBB', '.YYYYYY.', '..YYYY..', '...YY...', '...YY...', '..Y..Y..', '.YYYYYY.', 'BBBBBBBB'],         // hourglass
+    lvl10:    ['...YY...', '...YY...', 'YYYYYYYY', 'YYYYYYYY', '.YYYYYY.', '..YYYY..', '.YY..YY.', '.Y....Y.'],         // star
+  };
+
+  // Standalone SVG, for pixel art outside the map (the Trophy Hall is plain HTML).
+  function spriteSvg(rows, px) {
+    const w = Math.max(...rows.map(r => r.length)), h = rows.length;
+    const s = mk('svg', { viewBox: `0 0 ${w} ${h}`, width: w * px, height: h * px, 'shape-rendering': 'crispEdges', 'aria-hidden': 'true' });
+    rows.forEach((row, y) => [...row].forEach((ch, x) => {
+      if (PAL[ch]) mk('rect', { x, y, width: 1, height: 1, fill: PAL[ch] }, s);
+    }));
+    return s;
+  }
+
+  function sprite(parent, rows, px, attrs) {
+    const w = Math.max(...rows.map(r => r.length)), h = rows.length;
+    const g = mk('g', Object.assign({ 'shape-rendering': 'crispEdges', transform: `translate(${-w * px / 2},${-h * px / 2})` }, attrs), parent);
+    rows.forEach((row, y) => [...row].forEach((ch, x) => {
+      if (PAL[ch]) mk('rect', { x: x * px, y: y * px, width: px, height: px, fill: PAL[ch] }, g);
+    }));
+    return g;
+  }
+  // An entity = moving group (position) > mid (scale/filter) > inner (bobbing) > sprite.
+  function ent(parent, rows, px, bob) {
+    const g = mk('g', { class: 'ent' }, parent);
+    const mid = mk('g', { class: 'mid' }, g);
+    const inner = mk('g', { class: bob ? 'vbob' : '' }, mid);
+    sprite(inner, rows, px);
+    return { g, mid, inner };
+  }
+  const label = (x, y, text, parent) => {
+    const t = mk('text', { x, y, 'text-anchor': 'middle', 'font-size': 7, fill: '#fff3c4', style: "font-family:'Press Start 2P',monospace;stroke:#000;stroke-width:3;paint-order:stroke" }, parent);
+    t.textContent = text;
+    return t;
+  };
+
+  // Sea: two-tone tiles.
+  const defs = mk('defs', {}, svg);
+  const seaTile = mk('pattern', { id: 'seatile', width: 24, height: 24, patternUnits: 'userSpaceOnUse' }, defs);
+  mk('rect', { width: 24, height: 24, fill: '#1f6fa8' }, seaTile);
+  mk('rect', { x: 0, y: 0, width: 24, height: 12, fill: '#2479b3' }, seaTile);
+  mk('rect', { x: 4, y: 16, width: 8, height: 4, fill: '#2f8bc6' }, seaTile);
+  mk('rect', { x: 16, y: 6, width: 4, height: 4, fill: '#2f8bc6' }, seaTile);
+  mk('rect', { width: WORLD_W, height: WORLD_H, fill: 'url(#seatile)', 'shape-rendering': 'crispEdges' }, svg);
+
+  // Scrolling wave dashes; storm makes them taller and brighter.
+  const waves = [50, 130, 210, 270].map((y, i) => ({ g: mk('g', { class: 'wave', 'shape-rendering': 'crispEdges' }, svg), y, i }));
+  function setWaves(amp) {
+    const lift = Math.round(amp / 8) * 4;
+    waves.forEach(({ g, y, i }) => {
+      g.replaceChildren();
+      for (let x = (i * 23) % 60; x < WORLD_W * 2; x += 60 + (i % 2) * 20) {
+        mk('rect', { x, y: y - lift, width: 16, height: 4, fill: 'rgba(255,255,255,.55)' }, g);
+        mk('rect', { x: x + 4, y: y - lift - 4, width: 8, height: 4, fill: 'rgba(255,255,255,.55)' }, g);
+      }
+    });
+  }
+  // Favourable current: rows of pixel arrows that drift the way you are sailing. Only shown while you are on a streak.
+  const currentG = mk('g', { class: 'current', 'shape-rendering': 'crispEdges' }, svg);
+  const flow = mk('g', { class: 'flow' }, currentG);
+  [38, 96, 154, 212, 268].forEach((y, row) => {
+    for (let x = -90 + (row * 37) % 90; x < WORLD_W + 90; x += 90) {
+      const fill = 'rgba(215,245,255,.45)';
+      mk('rect', { x, y, width: 26, height: 3, fill }, flow);            // a long streak of moving water...
+      mk('rect', { x: x + 33, y, width: 11, height: 3, fill }, flow);    // ...trailing into a short one
+    }
+  });
+  mk('polyline', { points: WP.map(w => `${w.x},${w.y}`).join(' '), fill: 'none', stroke: '#f5e6a8', 'stroke-width': 3, 'stroke-dasharray': '6 8', 'shape-rendering': 'crispEdges' }, svg);
+
+  const chests = {};
+  Object.keys(ISLANDS).forEach(k => {
+    const w = WP[k];
+    place(ent(svg, ISLAND_SPR[k], 4).g, w.x, w.y + 38); // well below the route, so the ship never lands on top of it
+    edgeLabels.push({ el: label(w.x, w.y + 80, ISLANDS[k].toUpperCase(), svg), x: w.x });
+    chests[k] = null;
+  });
+
+  const kraken = ent(svg, SPR.kraken, 4, true);
+  const cage = mk('g', { class: 'cage', style: 'display:none' }, kraken.inner); // drawn over the Kraken, moves with it
+  sprite(cage, SPR.cage, 4);
+  // "SLOWED!" floats up from the Kraken when the current holds it back
+  const slowed = mk('text', { class: 'slowed', 'text-anchor': 'middle', y: -44, 'font-size': 9, fill: '#ffd23f', style: "font-family:'Press Start 2P',monospace;stroke:#000;stroke-width:3;paint-order:stroke" }, kraken.g);
+  slowed.textContent = 'SLOWED!';
+  const ship = ent(svg, SPR.ship, 3, true); // drawn after the Kraken so it never hides the ship
+
+  // Fog of war: blocky checker fog with hard-edged holes around the route you've sailed.
+  const fogTile = mk('pattern', { id: 'fogtile', width: 16, height: 16, patternUnits: 'userSpaceOnUse' }, defs);
+  mk('rect', { width: 16, height: 16, fill: '#aebcc6' }, fogTile);
+  mk('rect', { width: 8, height: 8, fill: '#bccad3' }, fogTile);
+  mk('rect', { x: 8, y: 8, width: 8, height: 8, fill: '#bccad3' }, fogTile);
+  const fogMask = mk('mask', { id: 'fogmask' }, defs);
+  mk('rect', { width: WORLD_W, height: WORLD_H, fill: 'white' }, fogMask);
+  const fogCircles = WP.map(w => mk('circle', { cx: w.x, cy: w.y, r: 0, fill: 'black', 'shape-rendering': 'crispEdges', style: 'transition:r 1.2s steps(8)' }, fogMask));
+  const cageFog = mk('circle', { cx: posAt(START_K).x, cy: posAt(START_K).y, r: 0, fill: 'black', 'shape-rendering': 'crispEdges', style: 'transition:r 1.2s steps(8)' }, fogMask);
+  const fog = mk('rect', { width: WORLD_W, height: WORLD_H, fill: 'url(#fogtile)', mask: 'url(#fogmask)', 'shape-rendering': 'crispEdges' }, svg);
+  const fogLabel = mk('text', { x: 900, y: 36, 'text-anchor': 'middle', 'font-size': 7, fill: '#56656e', style: "font-family:'Press Start 2P',monospace" }, svg);
+  fogLabel.textContent = 'UNCHARTED WATERS';
+  edgeLabels.push({ el: fogLabel, x: 900 });
+
+  // Storm clouds (above fog).
+  const clouds = mk('g', { class: 'clouds', opacity: 0 }, svg);
+  [[40, 24, 38], [250, 14, 52], [470, 30, 44], [700, 12, 60], [140, 268, 48], [600, 278, 56], [860, 20, 50]].forEach(([x, y, dur]) => {
+    const wrap = mk('g', { class: 'cloud', style: `--cdur:${dur}s` }, clouds);
+    sprite(wrap, SPR.cloud, 10, { transform: `translate(${x},${y})` });
+  });
+
+  // Wind wisps (above the fog, like the clouds): short gusts that blow across the map while the current runs.
+  const windG = mk('g', { class: 'wind', 'shape-rendering': 'crispEdges' }, svg);
+  [[30, 42, 5.5], [210, 78, 7], [400, 30, 6.2], [600, 70, 8], [100, 240, 6.8], [500, 262, 5.8], [800, 96, 6.4]].forEach(([x, y, dur]) => {
+    const gust = mk('g', { class: 'gust', style: `--gdur:${dur}s` }, windG);
+    [[0, 0, 10], [10, -2, 8], [18, 0, 12]].forEach(([dx, dy, w]) => mk('rect', { x: x + dx, y: y + dy, width: w, height: 2, fill: 'rgba(255,255,255,.8)' }, gust));
+  });
+
+  // Rain: square pixel drops.
+  const rainCtx = $('rain').getContext('2d');
+  const drops = Array.from({ length: 650 }, () => ({ x: Math.random() * (WORLD_W + 60), y: Math.random() * 300, l: 6 + Math.round(Math.random() * 2) * 4, v: 9 + Math.random() * 8 }));
+  let rainCount = 0, wind = 0;
+  (function rainLoop() {
+    rainCtx.clearRect(0, 0, WORLD_W, WORLD_H);
+    if (rainCount > 0) {
+      rainCtx.fillStyle = 'rgba(190,215,255,.75)';
+      for (let i = 0; i < rainCount; i++) {
+        const d = drops[i];
+        d.y += d.v; d.x -= wind * 0.6;
+        if (d.y > WORLD_H || d.x < -20) { d.y = -20; d.x = Math.random() * (WORLD_W + 60); }
+        rainCtx.fillRect(Math.round(d.x / 2) * 2, Math.round(d.y / 2) * 2, 2, d.l);
+      }
+    }
+    requestAnimationFrame(rainLoop);
+  })();
+
+  // Lightning: dim, slow (well under 3 flashes/second), and off for reduced-motion users.
+  let dangerLevel = 0, lightningTimer = null;
+  function bolt() {
+    if (reduceMotion) return;
+    $('flash').animate([{ opacity: 0.45 }, { opacity: 0.05 }, { opacity: 0.3 }, { opacity: 0 }], { duration: 500, easing: 'steps(4)' });
+  }
+  function lightningLoop() {
+    lightningTimer = null;
+    if (dangerLevel < 3) return;
+    bolt();
+    lightningTimer = setTimeout(lightningLoop, (dangerLevel >= 4 ? 2200 : 4000) + Math.random() * 2500);
+  }
+
+  function applyWeather(lv, caged) {
+    const w = WEATHER[lv];
+    dangerLevel = lv;
+    rainCount = reduceMotion ? Math.min(w.rain, 100) : w.rain;
+    wind = w.wind;
+    setWaves(w.amp);
+    waves.forEach(({ g }, i) => g.style.setProperty('--wdur', (w.wdur + i * 1.5) + 's'));
+    clouds.setAttribute('opacity', w.cloud);
+    $('tint').style.background = w.tint;
+    $('stage').classList.toggle('rumble', lv >= 4 && !reduceMotion);
+    [ship, kraken].forEach(e => {
+      e.inner.style.setProperty('--lift', Math.max(3, Math.round(w.lift / 3) * 3) + 'px');
+      e.inner.style.setProperty('--dur', w.dur + 's');
+    });
+    kraken.mid.style.transform = `scale(${caged ? 1 : 1 + lv * 0.18})`; // a caged Kraken stays small and harmless
+    kraken.mid.style.filter = !caged && lv >= 2 ? 'drop-shadow(3px 0 0 #ff2a2a) drop-shadow(-3px 0 0 #ff2a2a)' : 'none';
+    $('hud-weather').textContent = w.name.replace(/^\S+\s/, '').toUpperCase();
+    if (lv >= 3 && !lightningTimer) lightningTimer = setTimeout(lightningLoop, 600);
+  }
+
+  // The Kraken starts locked in a cage behind the start of the map (no progress yet). Your first habit rattles the cage,
+  // bursts it with a small tremor, and from then on the Kraken chases you. The cage stays where it is: it never follows the ship.
+  let cageTimer = null, cageBusy = false, camTimer = null, camHold = false;
+
+  const krakenPos = () => posAt(state.k);
+
+  function placeKraken(caged, wasCaged) {
+    const changed = wasCaged !== caged;
+    if (!changed && cageBusy) return;            // let a running animation finish
+    clearTimeout(cageTimer);
+    cageBusy = false;
+    cage.classList.remove('rattle', 'burst', 'drop');
+    const put = k => place(kraken.g, k.x, k.y + 4);
+    if (caged) {
+      put(krakenPos());
+      cage.style.display = '';
+      if (changed && !reduceMotion) {            // cage slams down (a fresh chart, or after a sinking)
+        cage.classList.add('drop');
+        cageBusy = true;
+        cageTimer = setTimeout(() => { cageBusy = false; }, 600);
+      }
+    } else if (changed && !reduceMotion) {       // set sail: the screen shakes a little while it gets out, the cage bursts, "KRAKEN RELEASED!"
+      const stage = $('stage');
+      put(krakenPos());
+      cage.style.display = '';
+      cage.classList.add('rattle');
+      stage.classList.add('tremor');             // light shake while it works its way out
+      cageBusy = true;
+      cageTimer = setTimeout(() => {
+        cage.classList.remove('rattle');
+        cage.classList.add('burst');
+        stage.classList.remove('tremor');
+        stage.classList.add('tremor-big');       // a harder jolt as the bars burst
+        setTimeout(() => stage.classList.remove('tremor-big'), 550);
+        showPopup('KRAKEN RELEASED!');
+        cageTimer = setTimeout(() => { cage.style.display = 'none'; cage.classList.remove('burst'); cageBusy = false; put(krakenPos()); }, 700);
+      }, 1000);
+    } else {
+      put(krakenPos());
+      cage.style.display = 'none';
+      if (changed) showPopup('KRAKEN RELEASED!'); // reduced motion: no cage animation, but still announce it
+    }
+  }
+
+  // Big centred message on the map that fades out by itself.
+  let popupTimer = null;
+  function showPopup(text) {
+    const pop = $('stage-popup');
+    pop.textContent = text;
+    pop.classList.remove('show');
+    void pop.offsetWidth;                        // restart the animation
+    pop.classList.add('show');
+    clearTimeout(popupTimer);
+    popupTimer = setTimeout(() => pop.classList.remove('show'), 2200);
+  }
+
+  function renderVoyage() {
+    const { p, chart } = state.voyage;
+    const gap = p - state.k;                       // your lead over the Kraken, in days
+    const caged = p === 0;                         // no progress yet on this chart: locked in its cage
+    const wasCaged = state.caged;
+    if (wasCaged !== caged) { state.caged = caged; save(); }
+    // The first days out of port stay calm, so setting sail doesn't drop you straight into rain.
+    const grace = p <= CALM_STEPS ? 1 : 0;
+    const lv = caged ? 0 : Math.max(0, Math.min(4, MAX_GAP - gap - grace));
+    applyWeather(lv, caged);
+
+    // Favourable current: on a streak the sea flows your way, the wind fills your sails, and the Kraken has to fight it.
+    const streakNow = state.lastActive && daysBetween(state.lastActive, today()) <= 1 ? state.streak : 0;
+    const onCurrent = !caged && onCurrentFor(streakNow, gap);
+    const wasCurrent = state.current;
+    if (wasCurrent !== onCurrent) {
+      state.current = onCurrent;
+      save();
+      if (onCurrent) {
+        toast('🌊 You caught a favourable current! The Kraken has to fight it.');
+        showPopup('CURRENT CAUGHT!');
+      } else if (wasCurrent) {
+        toast('The current faded. Keep your streak going to catch another!');
+      }
+    }
+    currentG.classList.toggle('on', onCurrent);
+    windG.classList.toggle('on', onCurrent);
+    if (onCurrent && !caged) {                     // the Kraken thrashes against the flow, the ship rides it
+      kraken.inner.style.setProperty('--dur', '.45s');
+      kraken.inner.style.setProperty('--lift', '9px');
+      ship.inner.style.setProperty('--dur', '1.4s');
+    }
+
+    place(ship.g, posAt(p).x, posAt(p).y - 6);
+    if (wasCaged === true && !caged && !reduceMotion) {
+      // setting sail: keep the camera on the cage while it breaks open, then follow the ship
+      clearTimeout(camTimer);
+      camHold = true;
+      moveCamera(posAt(0).x, posAt(0).y);
+      camTimer = setTimeout(() => { camHold = false; const q = posAt(state.voyage.p); moveCamera(q.x, q.y); }, 1700);
+    } else if (!camHold) {
+      moveCamera(posAt(p).x, posAt(p).y);
+    }
+    placeKraken(caged, wasCaged);
+    if (state.slowNotice) {                        // the current held the Kraken back today (also when it happened while you were away)
+      state.slowNotice = false;
+      save();
+      toast('🌊 The current held the Kraken back: +1 day of lead!');
+      if (!reduceMotion) { slowed.classList.remove('show'); void slowed.getBoundingClientRect(); slowed.classList.add('show'); }
+    }
+    fogCircles.forEach((c, i) => c.setAttribute('r', i <= p + 1 ? WEATHER[lv].r : 0));
+    cageFog.setAttribute('r', WEATHER[lv].r);      // the sea behind the start, where the cage sits, is always visible
+    Object.keys(chests).forEach(idx => {
+      if (p >= +idx && !chests[idx]) {
+        const wrap = mk('g', { transform: `translate(${WP[idx].x - 26},${WP[idx].y + 52})` }); // claimed treasure, sitting on the island's beach
+        sprite(mk('g', { class: 'chest' }, wrap), SPR.chest, 3);
+        svg.insertBefore(wrap, kraken.g); // chests sit under the Kraken, its cage and the ship
+        chests[idx] = wrap;
+      } else if (p < +idx && chests[idx]) {
+        chests[idx].remove(); chests[idx] = null;
+      }
+    });
+    fogLabel.style.display = p >= N - 2 ? 'none' : '';
+    $('gap-bar').style.width = caged ? '100%' : (Math.min(gap, MAX_GAP) / MAX_GAP * 100) + '%';
+    $('gap-bar').style.background = caged || gap >= 3 ? '#4caf50' : gap <= 1 ? '#d62828' : '#f2a005';
+    $('hud-gap').textContent = caged ? 'KRAKEN CAGED' : `KRAKEN: ${gap} DAY${gap === 1 ? '' : 'S'} BEHIND`;
+    $('hud-chart').textContent = `CHART ${chart}`;
+
+    // One message per row, so nothing turns into a run-on sentence.
+    const nx = Object.keys(ISLANDS).map(Number).find(n => n > p);
+    const idleToday = state.lastActive !== today();
+    const rows = [];
+    if (caged) {
+      rows.push(['', "Set sail! Your first habit will rattle the Kraken's cage."]);
+    } else {
+      rows.push(['', nx !== undefined
+        ? `Next: ${ISLANDS[nx]} in ${nx - p} day${nx - p === 1 ? '' : 's'}.`
+        : 'Treasure Island reached! A new chart begins with your next active day.']);
+      if (onCurrent) rows.push(['vs-good', 'A current is holding the Kraken back.']);
+      else if (streakNow < CURRENT_STREAK) rows.push(['', `Streak ${streakNow}/${CURRENT_STREAK} to catch a current.`]);
+      if (idleToday) rows.push(gap <= 2
+        ? ['vs-warn', 'Do a habit today or the Kraken closes in!']
+        : ['', 'Do a habit today to sail on.']);
+    }
+    const box = $('voyage-status');
+    box.replaceChildren();
+    rows.forEach(([cls, msg]) => box.append(el('div', 'vs-row' + (cls ? ' ' + cls : ''), msg)));
+    $('sunk').classList.toggle('show', !!state.sunkNotice);
+  }
+
+  function render() {
+    renderHero();
+    renderVoyage();
+    renderQuests();
+    renderAchievements();
+    renderIdeas();
+  }
+
+  // ---------- Quest ideas ----------
+  const CAT_LABEL = { body: 'Body', mind: 'Mind', home: 'Home', work: 'Work', other: 'Other' };
+  let boardCat = 'all';
+  const CATEGORIES = [
+    { id: 'all', label: 'All' },
+    { id: 'body', label: 'Body' },
+    { id: 'mind', label: 'Mind' },
+    { id: 'home', label: 'Home' },
+    { id: 'work', label: 'Work' },
+  ];
+  const IDEAS = [
+    { name: 'Drink 8 glasses of water', diff: 'easy', cat: 'body' },
+    { name: 'Stretch for 5 minutes', diff: 'easy', cat: 'body' },
+    { name: 'Take a short walk', diff: 'easy', cat: 'body' },
+    { name: 'Exercise for 30 minutes', diff: 'medium', cat: 'body' },
+    { name: 'Go to bed on time', diff: 'medium', cat: 'body' },
+    { name: 'Run 5 km', diff: 'hard', cat: 'body' },
+    { name: 'No sugar today', diff: 'hard', cat: 'body' },
+    { name: 'Wake up at 6am', diff: 'hard', cat: 'body' },
+    { name: 'Write in my journal', diff: 'easy', cat: 'mind' },
+    { name: 'Meditate for 10 minutes', diff: 'medium', cat: 'mind' },
+    { name: 'Read for 20 minutes', diff: 'medium', cat: 'mind' },
+    { name: 'Learn 5 new words', diff: 'medium', cat: 'mind' },
+    { name: 'Study for 30 minutes', diff: 'medium', cat: 'mind' },
+    { name: 'Practice a skill for 30 minutes', diff: 'medium', cat: 'mind' },
+    { name: 'Write 500 words', diff: 'hard', cat: 'mind' },
+    { name: 'Make my bed', diff: 'easy', cat: 'home' },
+    { name: 'Tidy my desk', diff: 'easy', cat: 'home' },
+    { name: 'Wash the dishes', diff: 'easy', cat: 'home' },
+    { name: 'Do a load of laundry', diff: 'easy', cat: 'home' },
+    { name: 'Cook a healthy meal', diff: 'medium', cat: 'home' },
+    { name: 'Clean one room', diff: 'medium', cat: 'home' },
+    { name: 'Plan tomorrow', diff: 'easy', cat: 'work' },
+    { name: 'Focus for 25 minutes', diff: 'easy', cat: 'work' },
+    { name: 'Clear my inbox', diff: 'medium', cat: 'work' },
+    { name: 'Finish my top priority task', diff: 'medium', cat: 'work' },
+    { name: 'Deep work for 2 hours', diff: 'hard', cat: 'work' },
+  ];
+  // Fewer suggestions wherever the panel is narrow (phone, or the sidebar column); "More ideas" rotates the rest.
+  const phoneQuery = window.matchMedia('(max-width: 560px)');
+  const sidebarQuery = window.matchMedia('(min-width: 1000px)');
+  const ideasShown = () => (phoneQuery.matches || sidebarQuery.matches ? 4 : 6);
+  [phoneQuery, sidebarQuery].forEach(q => q.addEventListener('change', () => renderIdeas()));
+  let ideaOffset = 0;
+  let ideaCat = 'all';
+
+  function renderIdeas() {
+    const have = new Set(state.habits.map(h => h.name.trim().toLowerCase()));
+    const available = IDEAS.filter(i => !have.has(i.name.toLowerCase()));
+    const inCat = id => (id === 'all' ? available : available.filter(i => i.cat === id));
+
+    const tabs = $('idea-tabs');
+    tabs.replaceChildren();
+    CATEGORIES.forEach(c => {
+      const b = el('button', 'tab' + (c.id === ideaCat ? ' active' : ''), c.label);
+      b.append(el('span', 'tab-count', ` (${inCat(c.id).length})`));
+      b.type = 'button';
+      b.setAttribute('role', 'tab');
+      b.setAttribute('aria-selected', String(c.id === ideaCat));
+      b.addEventListener('click', () => { ideaCat = c.id; ideaOffset = 0; renderIdeas(); });
+      tabs.append(b);
+    });
+
+    const box = $('ideas');
+    box.replaceChildren();
+    const pool = inCat(ideaCat);
+    if (!pool.length) {
+      box.append(el('div', 'ideas-empty', ideaCat === 'all' ? 'You have added every idea. Impressive!' : 'Nothing left in this category. Try another tab!'));
+      $('ideas-more').style.display = 'none';
+      return;
+    }
+    $('ideas-more').style.display = pool.length > ideasShown() ? '' : 'none';
+    const count = Math.min(ideasShown(), pool.length);
+    for (let i = 0; i < count; i++) {
+      const idea = pool[(ideaOffset + i) % pool.length];
+      const b = el('button', 'idea');
+      b.type = 'button';
+      b.title = `${idea.diff} · ${XP_BY_DIFF[idea.diff]} XP`;
+      b.append(el('span', '', idea.name), el('span', 'badge ' + idea.diff, `${XP_BY_DIFF[idea.diff]} XP`));
+      b.addEventListener('click', () => {
+        addHabit(idea.name, idea.diff, idea.cat);
+        toast(`Habit added: ${idea.name}`);
+      });
+      box.append(b);
+    }
+  }
+
+  // ---------- Feedback ----------
+  // Completing a habit can fire several messages at once, so they queue instead of burying the page.
+  const TOASTS_AT_ONCE = 2, TOAST_MS = 2400;
+  const toastQueue = [];
+  let toastsShowing = 0;
+  function pumpToasts() {
+    while (toastsShowing < TOASTS_AT_ONCE && toastQueue.length) {
+      const t = el('div', 'toast', toastQueue.shift());
+      $('toast-area').append(t);
+      toastsShowing++;
+      setTimeout(() => { t.remove(); toastsShowing--; pumpToasts(); }, TOAST_MS);
+    }
+  }
+  function toast(msg) {
+    toastQueue.push(msg);
+    pumpToasts();
+  }
+
+  function showLevelUp(level) {
+    $('levelup-text').textContent = `You are now Level ${level}, ${titleForLevel(level)}!`;
+    const overlay = $('levelup');
+    overlay.querySelectorAll('.confetti').forEach(c => c.remove());
+    const colors = ['#d4a017', '#8b2f2f', '#4a7c3a', '#6a4fb3', '#f1e2bf'];
+    for (let i = 0; i < 60; i++) {
+      const c = el('div', 'confetti');
+      c.style.left = Math.random() * 100 + '%';
+      c.style.background = colors[i % colors.length];
+      c.style.animationDuration = 1.8 + Math.random() * 2 + 's';
+      c.style.animationDelay = Math.random() * 0.6 + 's';
+      overlay.append(c);
+    }
+    overlay.classList.add('show');
+  }
+
+  // ---------- Export / import ----------
+  const BACKUP_APP = 'habit-arrr';
+  const isDay = s => typeof s === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(s);
+  const clampInt = (v, min, max, fallback) => (Number.isFinite(v) ? Math.min(max, Math.max(min, Math.floor(v))) : fallback);
+
+  function exportProgress() {
+    const backup = { app: BACKUP_APP, version: 1, exportedAt: new Date().toISOString(), state };
+    const blob = new Blob([JSON.stringify(backup, null, 2)], { type: 'application/json' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = `habit-arrr-backup-${today()}.json`;
+    document.body.append(a);
+    a.click();
+    a.remove();
+    setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+    toast('Backup downloaded');
+  }
+
+  // Never trust the file: rebuild a clean state from only the fields we know, with types and ranges checked.
+  function cleanState(raw) {
+    if (!raw || typeof raw !== 'object' || !Array.isArray(raw.habits)) return null;
+    const s = freshState();
+    s.habits = raw.habits.slice(0, 200).filter(h => h && typeof h.name === 'string' && h.name.trim()).map(h => ({
+      id: typeof h.id === 'string' && h.id ? h.id.slice(0, 40) : Date.now().toString(36) + Math.random().toString(36).slice(2, 6),
+      name: h.name.trim().slice(0, 60),
+      difficulty: XP_BY_DIFF[h.difficulty] ? h.difficulty : 'medium',
+      cat: CAT_LABEL[h.cat] ? h.cat : 'other',
+      streak: clampInt(h.streak, 0, 100000, 0),
+      lastDone: isDay(h.lastDone) ? h.lastDone : null,
+      totalDone: clampInt(h.totalDone, 0, 10000000, 0),
+    }));
+    s.totalXp = clampInt(raw.totalXp, 0, 1e9, 0);
+    s.bestStreak = clampInt(raw.bestStreak, 0, 100000, 0);
+    const known = new Set(ACHIEVEMENTS.map(a => a.id));
+    s.achievements = Array.isArray(raw.achievements) ? [...new Set(raw.achievements.filter(id => known.has(id)))] : [];
+    const v = raw.voyage || {};
+    s.voyage = { chart: clampInt(v.chart, 1, 100000, 1), p: clampInt(v.p, 0, N - 1, 0) };
+    s.lastActive = isDay(raw.lastActive) ? raw.lastActive : null;
+    s.tickedThrough = isDay(raw.tickedThrough) ? raw.tickedThrough : yesterday();
+    s.streak = clampInt(raw.streak, 0, 100000, s.lastActive ? 1 : 0);
+    // Kraken: use its saved position, or work it out from an older backup's "gap" (lead in days). Never on or past the ship.
+    const p = s.voyage.p;
+    s.k = p === 0 ? START_K : clampInt(typeof raw.k === 'number' ? raw.k : p - clampInt(raw.gap, 1, 1000, 3), START_K - 10, p - 1, p - 1);
+    s.drag = p > 0 && raw.drag === true;
+    s.current = p > 0 && raw.current === true;
+    s.slowNotice = false;
+    s.sunkNotice = false;
+    s.caged = typeof raw.k === 'number' ? raw.caged === true : p === 0; // older backups used "caged" for something else
+    return s;
+  }
+
+  function importProgress(file) {
+    if (!file) return;
+    if (file.size > 2 * 1024 * 1024) { toast('That file is too big to be a backup'); return; }
+    const reader = new FileReader();
+    reader.onerror = () => toast('Could not read that file');
+    reader.onload = () => {
+      let parsed = null;
+      try { parsed = JSON.parse(String(reader.result)); } catch (e) { /* handled below */ }
+      // Accept the wrapped backup ({ app, state }) or a bare state object.
+      const candidate = parsed && parsed.state ? parsed.state : parsed;
+      const clean = parsed && (parsed.app === undefined || parsed.app === BACKUP_APP) ? cleanState(candidate) : null;
+      if (!clean) { toast('That is not a Habit-Arrr! backup'); return; }
+      const msg = `Replace your current progress with this backup?\n\n${clean.habits.length} habit(s), ${clean.totalXp} XP, level ${levelFromXp(clean.totalXp)}.\n\nYour current progress will be overwritten.`;
+      if (!confirm(msg)) return;
+      state = clean;
+      processDays(); // count any idle days since the backup was made
+      save();
+      render();
+      toast('Progress imported');
+    };
+    reader.readAsText(file);
+  }
+
+  $('export').addEventListener('click', exportProgress);
+  $('import').addEventListener('click', () => $('import-file').click());
+  $('import-file').addEventListener('change', e => {
+    importProgress(e.target.files[0]);
+    e.target.value = ''; // lets you pick the same file again later
+  });
+
+  // ---------- Wiring ----------
+  $('ach-toggle').addEventListener('click', () => { showLockedTrophies = !showLockedTrophies; renderAchievements(); });
+  $('ideas-more').addEventListener('click', () => { ideaOffset += ideasShown(); renderIdeas(); });
+  $('add-form').addEventListener('submit', e => {
+    e.preventDefault();
+    const name = $('quest-name').value.trim();
+    if (!name) return;
+    addHabit(name, $('quest-diff').value, $('quest-cat').value);
+    $('quest-name').value = '';
+  });
+  $('levelup-close').addEventListener('click', () => $('levelup').classList.remove('show'));
+  $('reset').addEventListener('click', () => {
+    if (confirm('Erase ALL progress? This cannot be undone.')) {
+      state = freshState(); save(); render();
+    }
+  });
+
+  $('sunk-close').addEventListener('click', () => { state.sunkNotice = false; save(); render(); });
+
+  // Re-check streaks and the Kraken if the tab stays open past midnight.
+  document.addEventListener('visibilitychange', () => {
+    if (!document.hidden) { processDays(); save(); render(); }
+  });
+
+  processDays();
+  save();
+  render();
+})();
+</script>
+</body>
+</html>
