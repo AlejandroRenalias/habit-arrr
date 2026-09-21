@@ -240,7 +240,7 @@
     .toast { font-size: 1.05rem; padding: 7px 10px; }
     .ideas-head { font-size: 1.05rem; }
     form.add input[type=text] { flex: 1 1 100%; }
-    form.add select { flex: 1 1 40%; min-width: 0; }
+    form.add select { flex: 1 1 40%; min-width: 0; text-overflow: ellipsis; }
     form.add button { flex: 1 1 100%; padding: 12px; }
     .tabs { gap: 4px; margin-bottom: 8px; }
     button.tab { flex: 1 1 auto; padding: 9px 6px; font-size: .45rem; }
@@ -276,6 +276,12 @@
     #levelup .card { padding: 20px 16px; }
     #levelup h2 { font-size: 1rem; }
     #toast-area { bottom: 8px; }
+  }
+
+  /* Narrow phones: two selects side-by-side at 40% each get too tight to show their full label
+     ("Medium (20 XP)") — stack them full-width like the text input instead of relying on ellipsis. */
+  @media (max-width: 400px) {
+    form.add select { flex: 1 1 100%; }
   }
 </style>
 </head>
