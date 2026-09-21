@@ -137,7 +137,7 @@
   /* Voyage scene (pixel-art) */
   #world { transform-origin: 0 0; transition: transform 1s steps(8); }
   .stage { position: relative; border: 4px solid #1b1b1b; box-shadow: 4px 4px 0 #000; overflow: hidden; background: #000; image-rendering: pixelated; }
-  .stage svg.scene { width: 100%; height: auto; aspect-ratio: 4 / 7; display: block; image-rendering: pixelated; }
+  .stage svg.scene { width: 100%; height: auto; aspect-ratio: 16 / 9; display: block; image-rendering: pixelated; }
   .stage canvas, .stage .tint, .stage .flash, .stage .hud { position: absolute; left: 0; top: 0; width: 100%; pointer-events: none; }
   .stage canvas { height: 100%; image-rendering: pixelated; object-fit: cover; }
   .stage .tint, .stage .flash { height: 100%; }
@@ -212,7 +212,7 @@
   @media (min-width: 1000px) {
     main { max-width: 1160px; grid-template-columns: 1.25fr 1fr; align-items: start; }
     header.app-title, #hero, footer, .span-full { grid-column: 1 / -1; }
-    .stage svg.scene { aspect-ratio: 4 / 6; }
+    .stage svg.scene { aspect-ratio: 2 / 1; }
     /* The form sits in the narrower column, so it stacks in tidy rows instead of wrapping raggedly. */
     form.add input[type=text], form.add button { flex: 0 0 100%; }
     form.add select { flex: 1 1 calc(50% - 5px); min-width: 0; }
@@ -229,7 +229,7 @@
     .stats { gap: 6px; }
     .stat b { font-size: .75rem; }
     .stat span { font-size: .95rem; }
-    .stage svg.scene { aspect-ratio: 3 / 4; }
+    .stage svg.scene { aspect-ratio: 16 / 10; }
     .hud { gap: 4px; }
     .stage .popup { font-size: .6rem; }
     .hud span { font-size: .4rem; padding: 3px 5px; }
@@ -291,8 +291,8 @@
   <section class="panel loud span-full" aria-label="Voyage">
     <h2>The Voyage</h2>
     <div class="stage" id="stage">
-      <svg class="scene" id="scene" viewBox="0 0 400 700" preserveAspectRatio="xMidYMid slice" role="img" aria-label="Your ship sailing away from the Kraken, chasing behind you"></svg>
-      <canvas id="rain" width="400" height="700"></canvas>
+      <svg class="scene" id="scene" viewBox="0 0 700 394" preserveAspectRatio="xMidYMid slice" role="img" aria-label="Your ship sailing away from the Kraken, chasing behind you"></svg>
+      <canvas id="rain" width="700" height="394"></canvas>
       <div class="tint" id="tint"></div>
       <div class="flash" id="flash"></div>
       <div class="hud"><span id="hud-weather"></span><span id="hud-gap"></span><span id="hud-chart"></span></div>
@@ -400,7 +400,7 @@
   // ---------- Voyage config ----------
   const N = 12; // waypoints per chart
   const WORLD_W = 400, WORLD_H = 2000; // the full corridor: a tall strip the camera scrolls up through
-  const VIEW_W = 400, VIEW_H = 700;    // the on-screen window (what one screenful shows at zoom 1), separate from the world's full extent
+  const VIEW_W = 700, VIEW_H = 394;    // the on-screen window (what one screenful shows at zoom 1, ~16:9), separate from the world's full extent
   const STEP = 130;                    // vertical distance between waypoints
   const ROUTE_START_Y = 1500;          // near the bottom of the world: where the ship starts (leaves room below for the caged Kraken, and above for the last waypoint)
   const WP = Array.from({ length: N }, (_, i) => ({ x: WORLD_W / 2 + Math.sin(i * 0.9) * 60, y: ROUTE_START_Y - i * STEP })); // forward = smaller y = up-screen
@@ -760,8 +760,8 @@
   const svg = mk('g', { id: 'world' }, $('scene'));
   const ZOOM = 1.2;              // default zoom when the Kraken is close: a tight, behind-the-ship framing
   const ZOOM_MIN = 0.6;          // pulled back this far when the Kraken has fallen well behind, so it's never off-frame
-  const SHIP_ANCHOR_Y = 0.72;    // the ship sits 72% down the window: headroom for the route ahead, room below for the Kraken
-  const CAMERA_MARGIN = 70;      // headroom (viewBox units) so the Kraken isn't drawn flush against the very bottom edge
+  const SHIP_ANCHOR_Y = 0.66;    // the ship sits 66% down the window: headroom for the route ahead, room below for the Kraken (a landscape window is shorter, so this leaves less absolute space than it looks)
+  const CAMERA_MARGIN = 32;      // headroom (viewBox units) so the Kraken isn't drawn flush against the very bottom edge
   let camPos = { x: 0, y: 0 }, camZoom = ZOOM;
   const edgeLabels = []; // map labels that get nudged inward so they never run off the visible edge
   // The scene box's own aspect ratio (it varies per breakpoint) rarely matches VIEW_W:VIEW_H, so 'slice'
@@ -1035,16 +1035,20 @@
   slowed.textContent = 'SLOWED!';
   const ship = ent(svg, SPR.ship, 3, true); // drawn after the Kraken so it never hides the ship
 
-  // Fog of war: blocky checker fog with hard-edged holes around the route you've sailed.
-  const fogTile = mk('pattern', { id: 'fogtile', width: 16, height: 16, patternUnits: 'userSpaceOnUse' }, defs);
-  mk('rect', { width: 16, height: 16, fill: '#aebcc6' }, fogTile);
-  mk('rect', { width: 8, height: 8, fill: '#bccad3' }, fogTile);
-  mk('rect', { x: 8, y: 8, width: 8, height: 8, fill: '#bccad3' }, fogTile);
+  // Fog of war: a blurred, translucent haze over unexplored water, with a soft-edged hole around the route you've sailed.
+  const fogBlur = mk('filter', { id: 'fogblur', x: '-30%', y: '-30%', width: '160%', height: '160%' }, defs);
+  mk('feGaussianBlur', { in: 'SourceGraphic', stdDeviation: 7 }, fogBlur);
+  const fogEdgeBlur = mk('filter', { id: 'fogedge', x: '-30%', y: '-30%', width: '160%', height: '160%' }, defs);
+  mk('feGaussianBlur', { in: 'SourceGraphic', stdDeviation: 10 }, fogEdgeBlur);
   const fogMask = mk('mask', { id: 'fogmask' }, defs);
   mk('rect', { width: WORLD_W, height: WORLD_H, fill: 'white' }, fogMask);
-  const fogCircles = WP.map(w => mk('circle', { cx: w.x, cy: w.y, r: 0, fill: 'black', 'shape-rendering': 'crispEdges', style: 'transition:r 1.2s steps(8)' }, fogMask));
-  const cageFog = mk('circle', { cx: posAt(START_K).x, cy: posAt(START_K).y, r: 0, fill: 'black', 'shape-rendering': 'crispEdges', style: 'transition:r 1.2s steps(8)' }, fogMask);
-  const fog = mk('rect', { width: WORLD_W, height: WORLD_H, fill: 'url(#fogtile)', mask: 'url(#fogmask)', 'shape-rendering': 'crispEdges' }, svg);
+  const fogHoles = mk('g', { filter: 'url(#fogedge)' }, fogMask); // blurred mask edge: a soft fade instead of a hard circular cutoff
+  const fogCircles = WP.map(w => mk('circle', { cx: w.x, cy: w.y, r: 0, fill: 'black', style: 'transition:r 1.2s steps(8)' }, fogHoles));
+  const cageFog = mk('circle', { cx: posAt(START_K).x, cy: posAt(START_K).y, r: 0, fill: 'black', style: 'transition:r 1.2s steps(8)' }, fogHoles);
+  // A blurred duplicate of the sea, topped with a translucent haze tint: you can vaguely make out the water and
+  // route ahead through it, rather than the flat opaque checker this used to be.
+  const fog = mk('rect', { width: WORLD_W, height: WORLD_H, fill: 'url(#seatile)', filter: 'url(#fogblur)', mask: 'url(#fogmask)' }, svg);
+  const fogHaze = mk('rect', { width: WORLD_W, height: WORLD_H, fill: 'rgba(200,215,225,.45)', mask: 'url(#fogmask)' }, svg);
   const fogLabel = mk('text', { x: WORLD_W / 2, y: WP[N - 1].y - 60, 'text-anchor': 'middle', 'font-size': 7, fill: '#56656e', style: "font-family:'Press Start 2P',monospace" }, svg);
   fogLabel.textContent = 'UNCHARTED WATERS';
   edgeLabels.push({ el: fogLabel, x: WORLD_W / 2 });
