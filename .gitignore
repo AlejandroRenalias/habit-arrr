@@ -3,3 +3,5 @@
 !/.gitignore
 !/habit-arrr.html
 !/README.md
+!/test
+!/test/**
