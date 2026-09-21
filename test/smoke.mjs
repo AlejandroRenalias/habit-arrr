@@ -57,6 +57,50 @@ async function run() {
 
       await page.close();
     }
+
+    // Storm surge: telegraphed (warns a day ahead when the lead is tense) and fair (only strikes if idle
+    // on the warned day). Force Math.random so the warning always fires, then seed a state where a storm
+    // was already warned for "yesterday" and the player stayed idle through it.
+    {
+      const page = await browser.newPage();
+      await page.addInitScript(() => { Math.random = () => 0; });
+      await page.goto(appUrl);
+      await page.evaluate(() => {
+        const pad = n => String(n).padStart(2, '0');
+        const fmt = d => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+        const today = fmt(new Date());
+        const s = {
+          habits: [{ id: 'h1', name: 'Test', difficulty: 'medium', cat: 'other', streak: 0, lastDone: null, totalDone: 0 }],
+          totalXp: 0, achievements: [], bestStreak: 0, voyage: { chart: 1, p: 5 }, k: 3,
+          drag: false, slowNotice: false, current: false, streak: 0, lastActive: null, tickedThrough: today,
+          sunkNotice: false, caged: false, stormDay: null, stormWarnNotice: false, stormHitNotice: false, stormAvertedNotice: false,
+        };
+        localStorage.setItem('habit-quest-v1', JSON.stringify(s));
+      });
+      await page.reload();
+      await page.waitForTimeout(300);
+      await page.click('.quest .complete'); // gap is tense (2) and Math.random is forced low, so this should warn
+      await page.waitForTimeout(300);
+      const afterWarn = await page.evaluate(() => JSON.parse(localStorage.getItem('habit-quest-v1')));
+      check('storm warning is scheduled for the next day when the lead is tense', !!afterWarn.stormDay);
+
+      await page.evaluate(() => {
+        const pad = n => String(n).padStart(2, '0');
+        const fmt = d => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+        const addDays = (base, n) => { const d = new Date(base); d.setDate(d.getDate() + n); return fmt(d); };
+        const twoDaysAgo = addDays(new Date(), -2);
+        const yday = addDays(new Date(), -1);
+        const s = JSON.parse(localStorage.getItem('habit-quest-v1'));
+        s.lastActive = twoDaysAgo; s.tickedThrough = twoDaysAgo; s.stormDay = yday; // storm was due yesterday, player stayed idle
+        localStorage.setItem('habit-quest-v1', JSON.stringify(s));
+      });
+      await page.reload();
+      await page.waitForTimeout(300);
+      const afterHit = await page.evaluate(() => JSON.parse(localStorage.getItem('habit-quest-v1')));
+      check('an unmet storm warning pushes the ship back and clears itself', afterHit.stormDay === null && afterHit.voyage.p < 5);
+
+      await page.close();
+    }
   } finally {
     await browser.close();
   }

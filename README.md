@@ -43,6 +43,10 @@ reading the UI alone, so here's the model:
   untouchable.
 - Islands are fixed waypoints (`ISLANDS`/`ISLAND_XP`) that award bonus XP and a cosmetic treasure chest the
   first time the ship reaches them.
+- A **storm surge** is a telegraphed hazard, not a random ambush: once your lead drops to `STORM_TRIGGER_GAP
+  = 2` days or worse, there's a `STORM_CHANCE = 35%` chance each day that a warning appears for the next
+  day. If you stay idle on the warned day, the storm strikes and pushes the ship back `STORM_SURGE = 2`
+  waypoints toward the Kraken; completing a habit that day sails you through it unscathed instead.
 
 All of this is index-based (`p`, `k`, `N`) and independent of the scene's pixel geometry, which is worth
 knowing if you're touching the rendering: the visual layout (waypoint coordinates, camera, terrain) can be
