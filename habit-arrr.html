@@ -1357,12 +1357,28 @@
   const isDay = s => typeof s === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(s);
   const clampInt = (v, min, max, fallback) => (Number.isFinite(v) ? Math.min(max, Math.max(min, Math.floor(v))) : fallback);
 
-  function exportProgress() {
+  let downloadsApi = null;
+  window.claude?.use?.('downloads').then(d => { downloadsApi = d; });
+
+  async function exportProgress() {
     const backup = { app: BACKUP_APP, version: 1, exportedAt: new Date().toISOString(), state };
     const blob = new Blob([JSON.stringify(backup, null, 2)], { type: 'application/json' });
+    const filename = `habit-arrr-backup-${today()}.json`;
+
+    if (downloadsApi) {
+      try {
+        const result = await downloadsApi.save({ filename, data: blob });
+        toast(result.status === 'saved' ? 'Backup downloaded' : 'Backup sent');
+      } catch (e) {
+        if (e && e.code !== 'declined') toast('Could not export backup');
+      }
+      return;
+    }
+
+    // No downloads capability in this view (e.g. opened outside claude.ai): fall back to a normal browser download.
     const a = document.createElement('a');
     a.href = URL.createObjectURL(blob);
-    a.download = `habit-arrr-backup-${today()}.json`;
+    a.download = filename;
     document.body.append(a);
     a.click();
     a.remove();
