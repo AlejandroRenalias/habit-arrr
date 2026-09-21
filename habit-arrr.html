@@ -756,11 +756,13 @@
   };
   // Everything lives in one "world" group; the camera is just that group's zoom + pan.
   const svg = mk('g', { id: 'world' }, $('scene'));
-  const ZOOM = 1.2;
-  let camPos = { x: 0, y: 0 };
+  const ZOOM = 1.2;         // default zoom when the Kraken is close: a tight, behind-the-ship framing
+  const ZOOM_MIN = 0.75;    // pulled back this far when the Kraken has fallen well behind, so it's never off-frame
+  let camPos = { x: 0, y: 0 }, camZoom = ZOOM;
   const edgeLabels = []; // map labels that get nudged inward so they never run off the visible edge
-  function moveCamera(x, y) {
+  function moveCamera(x, y, zoom = ZOOM) {
     camPos = { x, y };
+    camZoom = zoom;
     // On phones the scene box is taller than the world's ratio, so 'slice' crops the sides of the viewBox.
     // Keep the camera inside the part that is actually visible.
     const box = $('scene').getBoundingClientRect();
@@ -768,12 +770,12 @@
     const s = Math.max(box.width / WORLD_W, box.height / WORLD_H);
     const vw = box.width / s, vh = box.height / s;
     const left = (WORLD_W - vw) / 2, top = (WORLD_H - vh) / 2;
-    const tx = Math.min(left, Math.max(left + vw - WORLD_W * ZOOM, WORLD_W / 2 - ZOOM * x));
-    const ty = Math.min(top, Math.max(top + vh - WORLD_H * ZOOM, WORLD_H / 2 - ZOOM * y));
-    svg.style.transform = `translate(${tx}px, ${ty}px) scale(${ZOOM})`;
+    const tx = Math.min(left, Math.max(left + vw - WORLD_W * zoom, WORLD_W / 2 - zoom * x));
+    const ty = Math.min(top, Math.max(top + vh - WORLD_H * zoom, WORLD_H / 2 - zoom * y));
+    svg.style.transform = `translate(${tx}px, ${ty}px) scale(${zoom})`;
 
     // Visible part of the world (in world units): keep each label fully inside it.
-    const minX = (left - tx) / ZOOM, maxX = (left + vw - tx) / ZOOM;
+    const minX = (left - tx) / zoom, maxX = (left + vw - tx) / zoom;
     edgeLabels.forEach(l => {
       const measured = l.el.getBBox ? l.el.getBBox().width : 0;
       const half = Math.max(measured, l.el.textContent.length * 7) / 2 + 8;
@@ -781,7 +783,16 @@
       l.el.style.visibility = l.x < minX - 30 || l.x > maxX + 30 ? 'hidden' : 'visible'; // island itself is off-screen
     });
   }
-  new ResizeObserver(() => moveCamera(camPos.x, camPos.y)).observe($('scene'));
+  // Chase camera: frames a point between the ship and the Kraken, weighted toward the Kraken so it always
+  // trails visibly "behind" the ship in frame, and zooms out as the gap widens so the Kraken is never lost off-edge.
+  function chaseCamera() {
+    const shipP = posAt(state.voyage.p), krakP = krakenPos();
+    const x = shipP.x * 0.45 + krakP.x * 0.55, y = shipP.y * 0.45 + krakP.y * 0.55;
+    const gapPx = Math.hypot(shipP.x - krakP.x, shipP.y - krakP.y);
+    const zoom = Math.max(ZOOM_MIN, Math.min(ZOOM, 300 / Math.max(gapPx, 60)));
+    moveCamera(x, y, zoom);
+  }
+  new ResizeObserver(() => moveCamera(camPos.x, camPos.y, camZoom)).observe($('scene'));
   const place = (g, x, y) => { g.style.transform = `translate(${x}px, ${y}px)`; };
   const posAt = i => (i >= 0 ? WP[Math.min(i, N - 1)] : { x: WP[0].x + i * STEP, y: WP[0].y }); // negative = behind the start
 
@@ -1168,13 +1179,13 @@
 
     place(ship.g, posAt(p).x, posAt(p).y - 6);
     if (wasCaged === true && !caged && !reduceMotion) {
-      // setting sail: keep the camera on the cage while it breaks open, then follow the ship
+      // setting sail: keep the camera on the cage while it breaks open, then follow the chase
       clearTimeout(camTimer);
       camHold = true;
       moveCamera(posAt(0).x, posAt(0).y);
-      camTimer = setTimeout(() => { camHold = false; const q = posAt(state.voyage.p); moveCamera(q.x, q.y); }, 1700);
+      camTimer = setTimeout(() => { camHold = false; chaseCamera(); }, 1700);
     } else if (!camHold) {
-      moveCamera(posAt(p).x, posAt(p).y);
+      chaseCamera();
     }
     placeKraken(caged, wasCaged);
     if (state.slowNotice) {                        // the current held the Kraken back today (also when it happened while you were away)
