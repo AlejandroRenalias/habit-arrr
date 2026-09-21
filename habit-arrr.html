@@ -165,6 +165,9 @@
   .cloud { animation: vdrift var(--cdur, 40s) steps(60) infinite; }
   @keyframes vdrift { from { transform: translateX(-220px); } to { transform: translateX(1160px); } }
   .clouds { transition: opacity 1.5s steps(5); }
+  /* Fog-of-war mist: soft wisps drifting over unexplored water, tiled every 300px so a seamless -300px loop works. */
+  .mist-row { animation: mistdrift var(--mdur, 50s) linear infinite; }
+  @keyframes mistdrift { from { transform: translateX(0); } to { transform: translateX(-300px); } }
   .rumble { animation: vrumble .2s steps(1) infinite; }
   .current, .wind { opacity: 0; transition: opacity 1s steps(4); }
   .current.on, .wind.on { opacity: 1; }
@@ -200,7 +203,7 @@
   #sunk p { margin: 10px 0 14px; font-size: 1.2rem; line-height: 1.25; }
   #sunk button { font-family: 'Press Start 2P', monospace; font-size: .6rem; border-radius: 0; border: 3px solid #000; background: #f2b705; box-shadow: 3px 3px 0 #000; }
   @media (prefers-reduced-motion: reduce) {
-    .vbob, .wave, .cloud, .rumble, .slam, .chest, .cage, .stage.tremor, .stage.tremor-big, .current .flow, .wind .gust { animation: none; }
+    .vbob, .wave, .cloud, .mist-row, .rumble, .slam, .chest, .cage, .stage.tremor, .stage.tremor-big, .current .flow, .wind .gust { animation: none; }
     .stage .popup.show { animation: none; opacity: 1; }
   }
 
@@ -1015,16 +1018,22 @@
   slowed.textContent = 'SLOWED!';
   const ship = ent(svg, SPR.ship, 3, true); // drawn after the Kraken so it never hides the ship
 
-  // Fog of war: blocky checker fog with hard-edged holes around the route you've sailed.
-  const fogTile = mk('pattern', { id: 'fogtile', width: 16, height: 16, patternUnits: 'userSpaceOnUse' }, defs);
-  mk('rect', { width: 16, height: 16, fill: '#aebcc6' }, fogTile);
-  mk('rect', { width: 8, height: 8, fill: '#bccad3' }, fogTile);
-  mk('rect', { x: 8, y: 8, width: 8, height: 8, fill: '#bccad3' }, fogTile);
+  // Fog of war: soft mist wisps drifting over unexplored water — the sea, route and any island underneath
+  // stay visible, just hazed over, rather than blotted out by an opaque tile. Same reveal mechanism as
+  // before (a black hole per visited waypoint, grown as you progress); only the fogged fill itself changes.
   const fogMask = mk('mask', { id: 'fogmask' }, defs);
   mk('rect', { width: WORLD_W, height: WORLD_H, fill: 'white' }, fogMask);
   const fogCircles = WP.map(w => mk('circle', { cx: w.x, cy: w.y, r: 0, fill: 'black', 'shape-rendering': 'crispEdges', style: 'transition:r 1.2s steps(8)' }, fogMask));
   const cageFog = mk('circle', { cx: posAt(START_K).x, cy: posAt(START_K).y, r: 0, fill: 'black', 'shape-rendering': 'crispEdges', style: 'transition:r 1.2s steps(8)' }, fogMask);
-  const fog = mk('rect', { width: WORLD_W, height: WORLD_H, fill: 'url(#fogtile)', mask: 'url(#fogmask)', 'shape-rendering': 'crispEdges' }, svg);
+  const fogMist = mk('g', { mask: 'url(#fogmask)', 'shape-rendering': 'crispEdges', style: 'filter:brightness(2.1) saturate(.35)' }, svg); // the cloud sprite's storm-navy palette, bleached pale for a misty (not stormy) look
+  // Three layers of wisps at different heights, sizes and drift speeds, tiled every 300px (so the loop is
+  // seamless) — overlapping them keeps the sea from showing through in identical gaps every time.
+  [{ y: 30, px: 15, dur: 55, op: .5 }, { y: 150, px: 20, dur: 70, op: .45 }, { y: 250, px: 13, dur: 40, op: .55 }].forEach(({ y, px, dur, op }, i) => {
+    const row = mk('g', { class: 'mist-row', style: `--mdur:${dur}s`, opacity: op }, fogMist);
+    for (let x = (i * 110) % 300 - 300; x < WORLD_W + 300; x += 300) {
+      sprite(row, SPR.cloud, px, { transform: `translate(${x},${y})` });
+    }
+  });
   const fogLabel = mk('text', { x: 900, y: 36, 'text-anchor': 'middle', 'font-size': 7, fill: '#56656e', style: "font-family:'Press Start 2P',monospace" }, svg);
   fogLabel.textContent = 'UNCHARTED WATERS';
   edgeLabels.push({ el: fogLabel, x: 900 });
