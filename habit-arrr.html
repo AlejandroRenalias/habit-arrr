@@ -133,6 +133,12 @@
   #levelup p { margin: 12px 0 18px; font-size: 1.4rem; }
   .confetti { position: absolute; top: -20px; width: 10px; height: 10px; animation: fall linear forwards; animation-timing-function: steps(28); z-index: 1; }
   @keyframes fall { to { transform: translateY(110vh); } }
+  #confirm-modal { position: fixed; inset: 0; background: rgba(0,0,0,.7); display: none; align-items: center; justify-content: center; z-index: 30; text-align: center; padding: 16px; }
+  #confirm-modal.show { display: flex; }
+  #confirm-modal .card { background: var(--parchment); border: 4px solid #000; box-shadow: 6px 6px 0 #000; padding: 22px 24px; max-width: 420px; animation: pop .3s steps(4); }
+  #confirm-modal p { margin: 0 0 18px; font-size: 1.4rem; line-height: 1.3; white-space: pre-line; }
+  .confirm-actions { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; }
+  #confirm-modal button.danger { background: var(--red); color: #fff; }
 
   /* Voyage scene (pixel-art) */
   #world { transform-origin: 0 0; transition: transform 1s steps(8); }
@@ -374,6 +380,15 @@
     <h2>Level Up!</h2>
     <p id="levelup-text"></p>
     <button id="levelup-close" type="button">Onward!</button>
+  </div>
+</div>
+<div id="confirm-modal" role="alertdialog" aria-modal="true">
+  <div class="card">
+    <p id="confirm-text"></p>
+    <div class="confirm-actions">
+      <button id="confirm-cancel" type="button">Never mind</button>
+      <button id="confirm-ok" type="button" class="danger">Confirm</button>
+    </div>
   </div>
 </div>
 
@@ -754,7 +769,7 @@
       const del = el('button', 'del', '✖');
       del.title = 'Abandon habit';
       del.setAttribute('aria-label', `Delete habit ${h.name}`);
-      del.addEventListener('click', () => { if (confirm(`Abandon "${h.name}"?`)) deleteHabit(h.id); });
+      del.addEventListener('click', () => askConfirm(`Abandon "${h.name}"?`, () => deleteHabit(h.id), 'Abandon'));
 
       card.append(info, btn, del);
       box.append(card);
@@ -1516,12 +1531,13 @@
       const clean = parsed && (parsed.app === undefined || parsed.app === BACKUP_APP) ? cleanState(candidate) : null;
       if (!clean) { toast('That is not a Habit-Arrr! backup'); return; }
       const msg = `Replace your current progress with this backup?\n\n${clean.habits.length} habit(s), ${clean.totalXp} XP, level ${levelFromXp(clean.totalXp)}.\n\nYour current progress will be overwritten.`;
-      if (!confirm(msg)) return;
-      state = clean;
-      processDays(); // count any idle days since the backup was made
-      save();
-      render();
-      toast('Progress imported');
+      askConfirm(msg, () => {
+        state = clean;
+        processDays(); // count any idle days since the backup was made
+        save();
+        render();
+        toast('Progress imported');
+      }, 'Replace progress');
     };
     reader.readAsText(file);
   }
@@ -1544,10 +1560,27 @@
     $('quest-name').value = '';
   });
   $('levelup-close').addEventListener('click', () => $('levelup').classList.remove('show'));
+
+  // A custom confirm dialog instead of window.confirm(): the app can run inside a sandboxed iframe
+  // (e.g. embedded as an artifact) where native confirm()/alert() are blocked or hang indefinitely.
+  let confirmAction = null;
+  function askConfirm(message, onConfirm, okLabel = 'Confirm') {
+    $('confirm-text').textContent = message;
+    $('confirm-ok').textContent = okLabel;
+    confirmAction = onConfirm;
+    $('confirm-modal').classList.add('show');
+  }
+  function closeConfirm() { $('confirm-modal').classList.remove('show'); confirmAction = null; }
+  $('confirm-cancel').addEventListener('click', closeConfirm);
+  $('confirm-modal').addEventListener('click', e => { if (e.target.id === 'confirm-modal') closeConfirm(); });
+  $('confirm-ok').addEventListener('click', () => {
+    const fn = confirmAction;
+    closeConfirm();
+    if (fn) fn();
+  });
+
   $('reset').addEventListener('click', () => {
-    if (confirm('Erase ALL progress? This cannot be undone.')) {
-      state = freshState(); save(); render();
-    }
+    askConfirm('Erase ALL progress? This cannot be undone.', () => { state = freshState(); save(); render(); }, 'Erase everything');
   });
 
   $('sunk-close').addEventListener('click', () => { state.sunkNotice = false; save(); render(); });

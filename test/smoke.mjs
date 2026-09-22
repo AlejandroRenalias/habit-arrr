@@ -55,6 +55,20 @@ async function run() {
       await page.waitForTimeout(200);
       check(`[${viewport.width}px] export produced no console errors`, consoleErrors.length === 0);
 
+      // Regression: deleting a habit used window.confirm(), which blocks or hangs forever in a sandboxed
+      // iframe (e.g. an embedded artifact) — the app now uses its own in-page confirm modal instead.
+      const countBefore = await page.locator('.quest').count();
+      await page.click('.quest button.del');
+      await page.waitForTimeout(150);
+      check(`[${viewport.width}px] delete shows the custom confirm modal`, await page.locator('#confirm-modal.show').count() === 1);
+      await page.click('#confirm-cancel');
+      await page.waitForTimeout(150);
+      check(`[${viewport.width}px] cancel keeps the habit`, await page.locator('.quest').count() === countBefore);
+      await page.click('.quest button.del');
+      await page.click('#confirm-ok');
+      await page.waitForTimeout(150);
+      check(`[${viewport.width}px] confirm deletes the habit`, await page.locator('.quest').count() === countBefore - 1);
+
       await page.close();
     }
 
