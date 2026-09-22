@@ -1,18 +1,18 @@
 # Habit-Arrr! ⚔
 
-A pirate/RPG-themed habit tracker that lives entirely in a single HTML file — no build step, no backend, no dependencies.
+A pirate/RPG-themed habit tracker that lives entirely in a single HTML file: no build step, no backend, no dependencies.
 
 ## What it does
 
 - Add habits ("quests") with a difficulty (easy/medium/hard) and category (body, mind, home, work, other).
 - Completing a quest earns XP, which levels you up and unlocks a title.
-- Your progress also drives a pixel-art voyage: your ship sails across a chart while a caged Kraken chases from behind. Keep completing habits daily to stay ahead of it — skip too many days and it catches you, sending your voyage progress (not your XP) back to the start.
+- Your progress also drives a pixel-art voyage: your ship sails across a chart while a caged Kraken chases from behind. Keep completing habits daily to stay ahead of it. Skip too many days and it catches you, sending your voyage progress (not your XP) back to the start.
 - Unlock trophies for streaks, milestones, and voyage events.
 - Progress is saved to `localStorage` in your browser. Use **Export progress** / **Import progress** in the footer to back up or move your data.
 
 ## Running it
 
-Just open `habit-arrr.html` in a browser — that's it.
+Just open `habit-arrr.html` in a browser, that's it.
 
 ```
 open habit-arrr.html
@@ -27,11 +27,11 @@ reading the UI alone, so here's the model:
 
 - A **chart** is a route of `N = 12` waypoints. `state.voyage.p` is the ship's current waypoint index (0
   to `N-1`); reaching the last one starts a new chart.
-- `state.k` is the Kraken's waypoint index. It starts at `START_K = -2` — two steps *behind* the route's
+- `state.k` is the Kraken's waypoint index. It starts at `START_K = -2`, two steps *behind* the route's
   start, caged and harmless. Your **lead** is `p - k`, in days.
 - Completing your **first** habit of a day moves the ship forward one waypoint. On your very first
   completion of a chart, this also frees the Kraken from its cage (it doesn't move that same day).
-- Every day you don't complete any habit, the Kraken advances one waypoint on its own — so idle days are
+- Every day you don't complete any habit, the Kraken advances one waypoint on its own, so idle days are
   the actual threat, not habit difficulty. If it ever reaches the ship (`k >= p`), the ship "sinks": chart
   progress resets to the start (XP and level are kept), and the Kraken goes back in its cage.
 - **Weather** (calm → overcast → rain → storm → hurricane) is driven directly by your lead: less lead
@@ -55,8 +55,8 @@ redesigned freely without affecting save data or gameplay, and vice versa.
 ## Testing
 
 There's a small headless-browser smoke test in `test/smoke.mjs` that loads `habit-arrr.html` directly (no
-server), adds and completes a habit, and checks XP/streak/achievement state updates with no console errors
-— at both a narrow-phone and a desktop viewport width. Run it with:
+server), adds and completes a habit, and checks XP/streak/achievement state updates with no console errors,
+at both a narrow-phone and a desktop viewport width. Run it with:
 
 ```
 npm install -D playwright   # once
