@@ -2,7 +2,7 @@
 
 A pirate/RPG-themed habit tracker that lives entirely in a single HTML file: no build step, no backend, no dependencies.
 
-![The voyage: a ship sailing away from a caged Kraken, toward islands on the route](screenshots/voyage.png)
+![The voyage: level/XP panel and a ship sailing away from a caged Kraken, toward islands on the route](screenshots/voyage.webp)
 
 ## What it does
 
@@ -13,9 +13,9 @@ A pirate/RPG-themed habit tracker that lives entirely in a single HTML file: no 
 - Progress is saved to `localStorage` in your browser. Use **Export progress** / **Import progress** in the footer to back up or move your data.
 
 <details>
-<summary>See the full app</summary>
+<summary>See the habit board</summary>
 
-![The full app: level/XP panel, the voyage, the habit board, the add-habit form, and the trophy hall](screenshots/full-app.png)
+![The habit board: a list of habits with streaks and difficulty, the add-habit form, and idea suggestions](screenshots/habit-board.webp)
 
 </details>
 
