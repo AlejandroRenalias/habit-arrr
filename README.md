@@ -12,7 +12,6 @@ A pirate/RPG-themed habit tracker that lives entirely in a single HTML file: no 
 - Unlock trophies for streaks, milestones, and voyage events.
 - Progress is saved to `localStorage` in your browser. Use **Export progress** / **Import progress** in the footer to back up or move your data.
 
-<details>
 <summary>See the habit board</summary>
 
 ![The habit board: a list of habits with streaks and difficulty, the add-habit form, and idea suggestions](screenshots/habit-board.webp)
